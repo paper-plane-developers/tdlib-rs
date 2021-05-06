@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -49,7 +50,6 @@ fn ignore_type(ty: &Type) -> bool {
 pub fn generate_rust_code(
     file: &mut impl Write,
     definitions: &[Definition],
-    layer: i32,
     config: &Config,
 ) -> io::Result<()> {
     writeln!(
@@ -62,11 +62,7 @@ pub fn generate_rust_code(
          // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your\n\
          // option. This file may not be copied, modified, or distributed\n\
          // except according to those terms.\n\
-         \n\
-         /// The schema layer from which the definitions were generated.\n\
-         pub const LAYER: i32 = {};\n\
-         ",
-        layer
+         "
     )?;
 
     let metadata = metadata::Metadata::new(&definitions);
