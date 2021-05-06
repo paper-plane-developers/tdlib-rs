@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "tdgrand",
+  "tdgrand-tl-gen",
+]

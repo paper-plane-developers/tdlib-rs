@@ -1,0 +1,8 @@
+[package]
+name = "tdgrand-tl-gen"
+version = "0.1.0"
+authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
+edition = "2018"
+
+[dependencies]
+grammers-tl-parser = "1.0"
