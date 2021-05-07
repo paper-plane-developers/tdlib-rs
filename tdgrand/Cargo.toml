@@ -6,4 +6,4 @@ edition = "2018"
 
 [build-dependencies]
 grammers-tl-parser = "1.0"
-tdgrand-tl-gen = { path = "../tdgrand-tl-gen", version = "0.1.0" }
+tdgrand-tl-gen = { path = "../tdgrand-tl-gen", version = "0.1" }
