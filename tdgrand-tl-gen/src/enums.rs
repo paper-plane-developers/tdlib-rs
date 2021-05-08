@@ -1,3 +1,4 @@
+// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -33,7 +34,8 @@ fn write_enum<W: Write>(
         writeln!(file, "{}#[derive(Debug)]", indent)?;
     }
 
-    writeln!(file, "{}#[derive(Clone, PartialEq)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize)]", indent)?;
+    writeln!(file, "{}#[serde(tag = \"@type\")]", indent)?;
     writeln!(
         file,
         "{}pub enum {} {{",
@@ -41,6 +43,7 @@ fn write_enum<W: Write>(
         rustifier::types::type_name(ty)
     )?;
     for d in metadata.defs_with_type(ty) {
+        writeln!(file, "{}    #[serde(rename(deserialize = \"{}\"))]", indent, d.name)?;
         write!(
             file,
             "{}    {}",
@@ -262,8 +265,8 @@ fn write_definition<W: Write>(
     config: &Config,
 ) -> io::Result<()> {
     write_enum(file, indent, ty, metadata, config)?;
-    write_serializable(file, indent, ty, metadata)?;
-    write_deserializable(file, indent, ty, metadata)?;
+    //write_serializable(file, indent, ty, metadata)?;
+    //write_deserializable(file, indent, ty, metadata)?;
     if config.impl_from_type {
         write_impl_from(file, indent, ty, metadata)?;
     }

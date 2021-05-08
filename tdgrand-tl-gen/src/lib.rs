@@ -1,5 +1,5 @@
-// Copyright 2020 - developers of the `grammers` project.
 // Copyright 2021 - developers of the `tdgrand` project.
+// Copyright 2020 - developers of the `grammers` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -55,6 +55,7 @@ pub fn generate_rust_code(
     writeln!(
         file,
         "\
+         // Copyright 2021 - developers of the `tdgrand` project.\n\
          // Copyright 2020 - developers of the `grammers` project.\n\
          //\n\
          // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or\n\
@@ -67,7 +68,7 @@ pub fn generate_rust_code(
 
     let metadata = metadata::Metadata::new(&definitions);
     structs::write_category_mod(file, Category::Types, definitions, &metadata, config)?;
-    structs::write_category_mod(file, Category::Functions, definitions, &metadata, config)?;
+    //structs::write_category_mod(file, Category::Functions, definitions, &metadata, config)?;
     enums::write_enums_mod(file, definitions, &metadata, config)?;
 
     Ok(())

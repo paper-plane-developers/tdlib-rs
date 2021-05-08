@@ -1,3 +1,4 @@
+// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -65,7 +66,7 @@ fn write_struct<W: Write>(
         writeln!(file, "{}#[derive(Debug)]", indent)?;
     }
 
-    writeln!(file, "{}#[derive(Clone, PartialEq)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize)]", indent)?;
     write!(
         file,
         "{}pub struct {}{} {{",
@@ -470,10 +471,10 @@ fn write_definition<W: Write>(
     config: &Config,
 ) -> io::Result<()> {
     write_struct(file, indent, def, metadata, config)?;
-    write_identifiable(file, indent, def, metadata)?;
-    write_serializable(file, indent, def, metadata)?;
+    //write_identifiable(file, indent, def, metadata)?;
+    //write_serializable(file, indent, def, metadata)?;
     if def.category == Category::Types || config.deserializable_functions {
-        write_deserializable(file, indent, def, metadata)?;
+        //write_deserializable(file, indent, def, metadata)?;
     }
     if def.category == Category::Functions {
         write_rpc(file, indent, def, metadata)?;

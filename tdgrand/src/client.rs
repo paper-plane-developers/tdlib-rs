@@ -1,3 +1,12 @@
+// Copyright 2021 - developers of the `tdgrand` project.
+//
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
+// <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
+// option. This file may not be copied, modified, or distributed
+// except according to those terms.
+use crate::enums::Update;
+use serde_json::Value;
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_double, c_void};
 
@@ -21,7 +30,7 @@ impl Client {
         Client { instance: client }
     }
 
-    pub fn next_update(&self) {
+    pub fn next_update(&self) -> Option<Update> {
         let response = unsafe {
             match td_json_client_receive(self.instance, 10.0)
                 .as_ref()
@@ -37,7 +46,15 @@ impl Client {
 
         if let Some(response) = response {
             println!("{}", response);
+            let json: Value = serde_json::from_str(&response).unwrap();
+            let td_type = json["@type"].as_str().unwrap();
+
+            if td_type.starts_with("update") {
+                return Some(serde_json::from_value(json).unwrap());
+            }
         }
+
+        None
     }
 }
 
