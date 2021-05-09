@@ -135,7 +135,7 @@ pub mod types {
                 }
             }
             "double" => "f64",
-            "int" => "i32",
+            "int32" => "i32",
             "int128" => {
                 if path {
                     "<[u8; 16]>"
