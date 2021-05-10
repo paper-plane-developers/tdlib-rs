@@ -17,6 +17,7 @@
 //! * `item_path` for use as a qualified item path (`Vec::<u8>`).
 //! * `attr_name` for use as an attribute name (`foo_bar: ()`).
 
+use convert_case::{Case, Casing};
 use grammers_tl_parser::tl::{Definition, Parameter, ParameterType, Type};
 
 /// Get the rusty type name for a certain definition, excluding namespace.
@@ -118,6 +119,11 @@ pub mod definitions {
             _ => variant,
         }
         .to_string()
+    }
+
+    pub fn function_name(def: &Definition) -> String {
+        let name = type_name(def);
+        name.to_case(Case::Snake)
     }
 }
 

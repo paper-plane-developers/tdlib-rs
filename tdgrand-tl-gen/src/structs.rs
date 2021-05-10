@@ -66,7 +66,7 @@ fn write_struct<W: Write>(
         writeln!(file, "{}#[derive(Debug)]", indent)?;
     }
 
-    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]", indent)?;
     write!(
         file,
         "{}pub struct {}{} {{",

@@ -10,14 +10,14 @@ mod client;
 mod generated;
 
 pub use client::Client;
-pub use generated::{enums, types};
+pub use generated::{functions, enums, types};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 /// This struct represents the concrete type of a vector, that is,
 /// `vector` as opposed to the type `Vector`. This bare type is less
 /// common, so instead of creating a enum for `Vector` wrapping `vector`
 /// as Rust's `Vec` (as we would do with auto-generated code),
 /// a new-type for `vector` is used instead.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct RawVec<T>(pub Vec<T>);

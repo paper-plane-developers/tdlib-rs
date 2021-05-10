@@ -7,7 +7,7 @@
 // except according to those terms.
 use crate::enums::Update;
 use serde_json::Value;
-use std::ffi::CStr;
+use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_double, c_void};
 
 type TDLibClient = *mut c_void;
@@ -31,18 +31,7 @@ impl Client {
     }
 
     pub fn next_update(&self) -> Option<Update> {
-        let response = unsafe {
-            match td_json_client_receive(self.instance, 10.0)
-                .as_ref()
-                .map(|response| CStr::from_ptr(response).to_string_lossy().into_owned()) {
-                None => {
-                    None
-                }
-                Some(contents) => {
-                    Some(contents)
-                }
-            }
-        };
+        let response = self.receive(10.0);
 
         if let Some(response) = response {
             println!("{}", response);
@@ -55,6 +44,27 @@ impl Client {
         }
 
         None
+    }
+
+    pub(crate) fn send(&self, request: &str) {
+        let cstring = CString::new(request).unwrap();
+        unsafe { td_json_client_send(self.instance, cstring.as_ptr()) }
+    }
+
+    fn receive(&self, timeout: f64) -> Option<String> {
+        unsafe {
+            match td_json_client_receive(self.instance, timeout)
+                .as_ref()
+                .map(|response| CStr::from_ptr(response).to_string_lossy().into_owned())
+            {
+                None => {
+                    None
+                }
+                Some(contents) => {
+                    Some(contents)
+                }
+            }
+        }
     }
 }
 

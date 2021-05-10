@@ -5,4 +5,5 @@ authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
+convert_case = "0.4"
 grammers-tl-parser = "1.0"

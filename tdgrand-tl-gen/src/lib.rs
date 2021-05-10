@@ -10,6 +10,7 @@
 //! This module gathers all the code generation submodules and coordinates
 //! them, feeding them the right data.
 mod enums;
+mod functions;
 mod grouper;
 mod metadata;
 mod rustifier;
@@ -68,7 +69,7 @@ pub fn generate_rust_code(
 
     let metadata = metadata::Metadata::new(&definitions);
     structs::write_category_mod(file, Category::Types, definitions, &metadata, config)?;
-    //structs::write_category_mod(file, Category::Functions, definitions, &metadata, config)?;
+    functions::write_functions_mod(file, definitions, &metadata)?;
     enums::write_enums_mod(file, definitions, &metadata, config)?;
 
     Ok(())
