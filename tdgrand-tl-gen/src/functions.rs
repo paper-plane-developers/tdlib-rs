@@ -25,7 +25,7 @@ fn write_function_declaration<W: Write>(
     // Define function
     write!(
         file,
-        "{}    fn {}(&self",
+        "{}    fn {}(&self, client_id: i32",
         indent,
         rustifier::definitions::function_name(def),
     )?;
@@ -58,7 +58,7 @@ fn write_function_definition<W: Write>(
     // Define function
     write!(
         file,
-        "{}    fn {}(&self",
+        "{}    fn {}(&self, client_id: i32",
         indent,
         rustifier::definitions::function_name(def),
     )?;
@@ -98,7 +98,7 @@ fn write_function_definition<W: Write>(
         }
     }
     writeln!(file, "{}        }});", indent)?;
-    writeln!(file, "{}        self.send(&json.to_string());", indent)?;
+    writeln!(file, "{}        self.send(client_id, &json.to_string());", indent)?;
 
     writeln!(file, "{}    }}", indent)?;
     Ok(())
@@ -131,8 +131,8 @@ pub(crate) fn write_functions_mod<W: Write>(
             "        "
         };
 
-        // Begin ClientExt trait
-        writeln!(file, "{}pub trait ClientExt {{", indent)?;
+        // Begin ClientManagerExt trait
+        writeln!(file, "{}pub trait ClientManagerExt {{", indent)?;
 
         for definition in grouped[key]
             .iter()
@@ -141,11 +141,11 @@ pub(crate) fn write_functions_mod<W: Write>(
             write_function_declaration(&mut file, indent, definition, metadata)?;
         }
 
-        // End ClientExt trait
+        // End ClientManagerExt trait
         writeln!(file, "{}}}", indent)?;
 
-        // Begin ClientExt impl
-        writeln!(file, "{}impl ClientExt for crate::Client {{", indent)?;
+        // Begin ClientManagerExt impl
+        writeln!(file, "{}impl ClientManagerExt for crate::ClientManager {{", indent)?;
 
         for definition in grouped[key]
             .iter()
@@ -154,7 +154,7 @@ pub(crate) fn write_functions_mod<W: Write>(
             write_function_definition(&mut file, indent, definition, metadata)?;
         }
 
-        // End ClientExt impl
+        // End ClientManagerExt impl
         writeln!(file, "{}}}", indent)?;
 
         // End possibly inner mod

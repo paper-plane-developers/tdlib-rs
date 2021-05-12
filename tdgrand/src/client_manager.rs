@@ -8,33 +8,32 @@
 use crate::enums::Update;
 use serde_json::Value;
 use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_double, c_void};
-
-type TDLibClient = *mut c_void;
-
-pub struct Client {
-    instance: TDLibClient,
-}
+use std::os::raw::{c_char, c_double, c_int};
 
 #[link(name = "tdjson")]
 extern "C" {
-    fn td_json_client_create() -> TDLibClient;
-    fn td_json_client_send(client: TDLibClient, request: *const c_char);
-    fn td_json_client_receive(client: TDLibClient, timeout: c_double) -> *mut c_char;
-    fn td_json_client_destroy(client: TDLibClient);
+    fn td_create_client_id() -> c_int;
+    fn td_send(client_id: c_int, request: *const c_char);
+    fn td_receive(timeout: c_double) -> *const c_char;
 }
 
-impl Client {
+pub struct ClientManager {}
+
+impl ClientManager {
     pub fn new() -> Self {
-        let client = unsafe { td_json_client_create() };
-        Client { instance: client }
+        ClientManager {}
     }
 
-    pub fn next_update(&self) -> Option<Update> {
-        let response = self.receive(10.0);
+    pub fn create_client() -> i32 {
+        unsafe { td_create_client_id() }
+    }
+
+    pub async fn next_update(&self) -> Option<Update> {
+        let response = Self::receive(2.0);
 
         if let Some(response) = response {
             println!("{}", response);
+
             let json: Value = serde_json::from_str(&response).unwrap();
             let td_type = json["@type"].as_str().unwrap();
 
@@ -46,30 +45,20 @@ impl Client {
         None
     }
 
-    pub(crate) fn send(&self, request: &str) {
+    pub(crate) fn send(&self, client_id: i32, request: &str) {
         let cstring = CString::new(request).unwrap();
-        unsafe { td_json_client_send(self.instance, cstring.as_ptr()) }
+        unsafe { td_send(client_id, cstring.as_ptr()) }
     }
 
-    fn receive(&self, timeout: f64) -> Option<String> {
+    fn receive(timeout: f64) -> Option<String> {
         unsafe {
-            match td_json_client_receive(self.instance, timeout)
+            match td_receive(timeout)
                 .as_ref()
                 .map(|response| CStr::from_ptr(response).to_string_lossy().into_owned())
             {
-                None => {
-                    None
-                }
-                Some(contents) => {
-                    Some(contents)
-                }
+                None => None,
+                Some(contents) => Some(contents),
             }
         }
-    }
-}
-
-impl Drop for Client {
-    fn drop(&mut self) {
-        unsafe { td_json_client_destroy(self.instance) }
     }
 }

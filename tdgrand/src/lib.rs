@@ -6,10 +6,10 @@
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-mod client;
+mod client_manager;
 mod generated;
 
-pub use client::Client;
+pub use client_manager::ClientManager;
 pub use generated::{functions, enums, types};
 
 use serde::{Deserialize, Serialize};
