@@ -109,20 +109,7 @@ pub(crate) fn write_category_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    write!(
-        file,
-        "\
-         /// This module contains all of the bare types, each\n\
-         /// represented by a `struct`. All of them implement\n\
-         /// [`Identifiable`], [`Serializable`] and [`Deserializable`].\n\
-         ///\n\
-         /// [`Identifiable`]: ../trait.Identifiable.html\n\
-         /// [`Serializable`]: ../trait.Serializable.html\n\
-         /// [`Deserializable`]: ../trait.Deserializable.html\n\
-         #[allow(clippy::cognitive_complexity, clippy::identity_op, clippy::unreadable_literal)]\n\
-         pub mod types {{\n\
-         "
-    )?;
+    writeln!(file, "pub mod types {{")?;
 
     let grouped = grouper::group_by_ns(definitions, Category::Types);
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();

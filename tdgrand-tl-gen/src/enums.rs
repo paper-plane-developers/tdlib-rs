@@ -87,19 +87,7 @@ pub(crate) fn write_enums_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    write!(
-        file,
-        "\
-         /// This module contains all of the boxed types, each\n\
-         /// represented by a `enum`. All of them implement\n\
-         /// [`Serializable`] and [`Deserializable`].\n\
-         ///\n\
-         /// [`Serializable`]: /grammers_tl_types/trait.Serializable.html\n\
-         /// [`Deserializable`]: /grammers_tl_types/trait.Deserializable.html\n\
-         #[allow(clippy::large_enum_variant)]\n\
-         pub mod enums {{\n\
-         "
-    )?;
+    writeln!(file, "pub mod enums {{")?;
 
     let grouped = grouper::group_types_by_ns(definitions);
     let mut sorted_keys: Vec<&Option<String>> = grouped.keys().collect();
