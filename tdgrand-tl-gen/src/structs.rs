@@ -12,7 +12,7 @@
 use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
-use crate::{ignore_type, Config};
+use crate::ignore_type;
 use grammers_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
 
@@ -59,13 +59,8 @@ fn write_struct<W: Write>(
     indent: &str,
     def: &Definition,
     _metadata: &Metadata,
-    config: &Config,
 ) -> io::Result<()> {
     // Define struct
-    if config.impl_debug {
-        writeln!(file, "{}#[derive(Debug)]", indent)?;
-    }
-
     writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]", indent)?;
     write!(
         file,
@@ -468,20 +463,8 @@ fn write_definition<W: Write>(
     indent: &str,
     def: &Definition,
     metadata: &Metadata,
-    config: &Config,
 ) -> io::Result<()> {
-    write_struct(file, indent, def, metadata, config)?;
-    //write_identifiable(file, indent, def, metadata)?;
-    //write_serializable(file, indent, def, metadata)?;
-    if def.category == Category::Types || config.deserializable_functions {
-        //write_deserializable(file, indent, def, metadata)?;
-    }
-    if def.category == Category::Functions {
-        write_rpc(file, indent, def, metadata)?;
-    }
-    if def.category == Category::Types && config.impl_from_enum {
-        write_impl_from(file, indent, def, metadata)?;
-    }
+    write_struct(file, indent, def, metadata)?;
     Ok(())
 }
 
@@ -491,7 +474,6 @@ pub(crate) fn write_category_mod<W: Write>(
     category: Category,
     definitions: &[Definition],
     metadata: &Metadata,
-    config: &Config,
 ) -> io::Result<()> {
     // Begin outermost mod
     match category {
@@ -546,18 +528,11 @@ pub(crate) fn write_category_mod<W: Write>(
             "        "
         };
 
-        if category == Category::Types && config.impl_from_enum {
-            // If all of the conversions are infallible this will be unused.
-            // Don't bother checking this beforehand, just allow warnings.
-            writeln!(file, "{}#[allow(unused_imports)]", indent)?;
-            writeln!(file, "{}use std::convert::TryFrom;", indent)?;
-        }
-
         for definition in grouped[key]
             .iter()
             .filter(|def| def.category == Category::Functions || !ignore_type(&def.ty))
         {
-            write_definition(&mut file, indent, definition, metadata, config)?;
+            write_definition(&mut file, indent, definition, metadata)?;
         }
 
         // End possibly inner mod

@@ -12,7 +12,7 @@ use std::env;
 use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
 use std::path::Path;
-use tdgrand_tl_gen::{generate_client, generate_rust_code, Config};
+use tdgrand_tl_gen::{generate_client, generate_rust_code};
 
 /// Load the type language definitions from a certain file.
 /// Parse errors will be printed to `stderr`, and only the
@@ -39,21 +39,12 @@ fn main() -> std::io::Result<()> {
     let mut file = BufWriter::new(File::create(
         Path::new(&env::var("OUT_DIR").unwrap()).join("generated.rs"),
     )?);
+    generate_rust_code(&mut file, &definitions)?;
+    file.flush()?;
 
     let mut client_file = BufWriter::new(File::create(
         Path::new(&env::var("OUT_DIR").unwrap()).join("client.rs"),
     )?);
-
-    let config = Config {
-        deserializable_functions: cfg!(feature = "deserializable-functions"),
-        impl_debug: cfg!(feature = "impl-debug"),
-        impl_from_enum: cfg!(feature = "impl-from-enum"),
-        impl_from_type: cfg!(feature = "impl-from-type"),
-    };
-
-    generate_rust_code(&mut file, &definitions, &config)?;
-    file.flush()?;
-
     generate_client(&mut client_file, &definitions)?;
     client_file.flush()?;
 

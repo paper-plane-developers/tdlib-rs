@@ -19,24 +19,6 @@ mod structs;
 use grammers_tl_parser::tl::{Category, Definition, Type};
 use std::io::{self, Write};
 
-pub struct Config {
-    pub deserializable_functions: bool,
-    pub impl_debug: bool,
-    pub impl_from_type: bool,
-    pub impl_from_enum: bool,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            deserializable_functions: false,
-            impl_debug: true,
-            impl_from_type: true,
-            impl_from_enum: true,
-        }
-    }
-}
-
 /// Don't generate types for definitions of this type,
 /// since they are "core" types and treated differently.
 const SPECIAL_CASED_TYPES: [&str; 1] = ["Bool"];
@@ -51,7 +33,6 @@ fn ignore_type(ty: &Type) -> bool {
 pub fn generate_rust_code(
     file: &mut impl Write,
     definitions: &[Definition],
-    config: &Config,
 ) -> io::Result<()> {
     write!(
         file,
@@ -68,8 +49,8 @@ pub fn generate_rust_code(
     )?;
 
     let metadata = metadata::Metadata::new(&definitions);
-    structs::write_category_mod(file, Category::Types, definitions, &metadata, config)?;
-    enums::write_enums_mod(file, definitions, &metadata, config)?;
+    structs::write_category_mod(file, Category::Types, definitions, &metadata)?;
+    enums::write_enums_mod(file, definitions, &metadata)?;
 
     Ok(())
 }
