@@ -210,10 +210,6 @@ pub mod types {
     pub fn qual_name(ty: &Type) -> String {
         get_path(ty, false)
     }
-
-    pub fn item_path(ty: &Type) -> String {
-        get_path(ty, true)
-    }
 }
 
 pub mod parameters {
@@ -381,27 +377,6 @@ mod tests {
         ty.generic_ref = true;
         let name = types::qual_name(&ty);
         assert_eq!(name, "X");
-    }
-
-    #[test]
-    fn check_type_item_path() {
-        let ty = "Vector<FileHash>".parse().unwrap();
-        let name = types::item_path(&ty);
-        assert_eq!(name, "Vec::<crate::enums::FileHash>");
-    }
-
-    #[test]
-    fn check_type_bytes_item_path() {
-        let ty = "bytes".parse().unwrap();
-        let name = types::item_path(&ty);
-        assert_eq!(name, "Vec::<u8>");
-    }
-
-    #[test]
-    fn check_type_large_int_item_path() {
-        let ty = "int256".parse().unwrap();
-        let name = types::item_path(&ty);
-        assert_eq!(name, "<[u8; 32]>");
     }
 
     // Parameter methods

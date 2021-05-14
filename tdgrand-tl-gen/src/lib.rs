@@ -16,7 +16,7 @@ mod metadata;
 mod rustifier;
 mod structs;
 
-use grammers_tl_parser::tl::{Category, Definition, Type};
+use grammers_tl_parser::tl::{Definition, Type};
 use std::io::{self, Write};
 
 /// Don't generate types for definitions of this type,
@@ -49,7 +49,7 @@ pub fn generate_rust_code(
     )?;
 
     let metadata = metadata::Metadata::new(&definitions);
-    structs::write_category_mod(file, Category::Types, definitions, &metadata)?;
+    structs::write_category_mod(file, definitions, &metadata)?;
     enums::write_enums_mod(file, definitions, &metadata)?;
 
     Ok(())
