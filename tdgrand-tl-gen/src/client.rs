@@ -109,7 +109,7 @@ pub mod client {{
     for key in sorted_keys.into_iter() {
         for definition in grouped[key]
             .iter()
-            .filter(|def| def.category == Category::Functions || !ignore_type(&def.ty))
+            .filter(|def| !ignore_type(&def.ty))
         {
             write_method(&mut file, definition, metadata)?;
         }
