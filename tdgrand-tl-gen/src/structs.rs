@@ -61,7 +61,7 @@ fn write_struct<W: Write>(
     _metadata: &Metadata,
 ) -> io::Result<()> {
     // Define struct
-    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]", indent)?;
     write!(
         file,
         "{}pub struct {}{} {{",
@@ -109,7 +109,9 @@ pub(crate) fn write_category_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    writeln!(file, "pub mod types {{")?;
+    writeln!(file, "\
+pub mod types {{
+    use serde::{{Deserialize, Serialize}};")?;
 
     let grouped = grouper::group_by_ns(definitions, Category::Types);
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();
@@ -126,7 +128,7 @@ pub(crate) fn write_category_mod<W: Write>(
 
         for definition in grouped[key]
             .iter()
-            .filter(|def| def.category == Category::Functions || !ignore_type(&def.ty))
+            .filter(|def| !ignore_type(&def.ty))
         {
             write_definition(&mut file, indent, definition, metadata)?;
         }

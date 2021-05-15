@@ -30,7 +30,7 @@ fn write_enum<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
 
-    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]", indent)?;
     writeln!(file, "{}#[serde(tag = \"@type\")]", indent)?;
     writeln!(
         file,
@@ -87,7 +87,9 @@ pub(crate) fn write_enums_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    writeln!(file, "pub mod enums {{")?;
+    writeln!(file, "\
+pub mod enums {{
+    use serde::{{Deserialize, Serialize}};")?;
 
     let grouped = grouper::group_types_by_ns(definitions);
     let mut sorted_keys: Vec<&Option<String>> = grouped.keys().collect();
