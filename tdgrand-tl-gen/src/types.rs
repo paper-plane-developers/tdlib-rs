@@ -91,19 +91,8 @@ fn write_struct<W: Write>(
     Ok(())
 }
 
-/// Writes an entire definition as Rust code (`struct` and `impl`).
-fn write_definition<W: Write>(
-    file: &mut W,
-    indent: &str,
-    def: &Definition,
-    metadata: &Metadata,
-) -> io::Result<()> {
-    write_struct(file, indent, def, metadata)?;
-    Ok(())
-}
-
-/// Write an entire module for the desired category.
-pub(crate) fn write_category_mod<W: Write>(
+/// Write the entire module dedicated to types.
+pub(crate) fn write_types_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
@@ -130,7 +119,7 @@ pub mod types {{
             .iter()
             .filter(|def| !ignore_type(&def.ty))
         {
-            write_definition(&mut file, indent, definition, metadata)?;
+            write_struct(&mut file, indent, definition, metadata)?;
         }
 
         // End possibly inner mod

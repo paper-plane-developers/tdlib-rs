@@ -69,17 +69,6 @@ fn write_enum<W: Write>(
     Ok(())
 }
 
-/// Writes an entire definition as Rust code (`enum` and `impl`).
-fn write_definition<W: Write>(
-    file: &mut W,
-    indent: &str,
-    ty: &Type,
-    metadata: &Metadata,
-) -> io::Result<()> {
-    write_enum(file, indent, ty, metadata)?;
-    Ok(())
-}
-
 /// Write the entire module dedicated to enums.
 pub(crate) fn write_enums_mod<W: Write>(
     mut file: &mut W,
@@ -105,7 +94,7 @@ pub mod enums {{
         };
 
         for ty in grouped[key].iter().filter(|ty| !ignore_type(*ty)) {
-            write_definition(&mut file, indent, ty, metadata)?;
+            write_enum(&mut file, indent, ty, metadata)?;
         }
 
         // End possibly inner mod
