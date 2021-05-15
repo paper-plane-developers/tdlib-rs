@@ -28,11 +28,9 @@ pub(crate) static OBSERVER: Lazy<observer::Observer> =
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct RawVec<T>(pub Vec<T>);
 
-pub fn next_update() -> Option<Update> {
+pub fn step() -> Option<(Update, i32)> {
     let response = tdjson::receive(2.0);
     if let Some(response) = response {
-        println!("{}", response);
-
         let json: Value = serde_json::from_str(&response).unwrap();
 
         if let Some(td_extra) = json["@extra"].as_str() {
@@ -41,7 +39,8 @@ pub fn next_update() -> Option<Update> {
 
         let td_type = json["@type"].as_str().unwrap();
         if td_type.starts_with("update") {
-            return Some(serde_json::from_value(json).unwrap());
+            let td_client_id = json["@client_id"].as_i64().unwrap();
+            return Some((serde_json::from_value(json).unwrap(), td_client_id as i32));
         }
     }
 
