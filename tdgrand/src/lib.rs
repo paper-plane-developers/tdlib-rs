@@ -6,13 +6,11 @@
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
-mod client;
 mod generated;
 mod observer;
 mod tdjson;
 
-pub use client::Client;
-pub use generated::{enums, types};
+pub use generated::{client::Client, enums, types};
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
@@ -37,8 +35,8 @@ pub fn next_update() -> Option<Update> {
 
         let json: Value = serde_json::from_str(&response).unwrap();
 
-        if let Some(extra) = json["@extra"].as_str() {
-            OBSERVER.notify(extra);
+        if let Some(td_extra) = json["@extra"].as_str() {
+            OBSERVER.notify(td_extra);
         }
 
         let td_type = json["@type"].as_str().unwrap();

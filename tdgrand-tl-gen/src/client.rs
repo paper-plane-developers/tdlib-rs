@@ -74,31 +74,32 @@ pub(crate) fn write_client_mod<W: Write>(
     definitions: &[Definition],
     metadata: &Metadata,
 ) -> io::Result<()> {
-    // Begin outermost impl
+    // Begin outermost mod and impl
     writeln!(
         file,
         "\
-use crate::{{tdjson, OBSERVER}};
-use serde_json::{{json, Value}};
-use uuid::Uuid;
-pub struct Client {{
-    client_id: i32,
-}}
-impl Client {{
-    pub fn new() -> Self {{
-        Client {{
-            client_id: tdjson::create_client(),
-        }}
+pub mod client {{
+    use crate::{{tdjson, OBSERVER}};
+    use serde_json::{{json, Value}};
+    use uuid::Uuid;
+    pub struct Client {{
+        client_id: i32,
     }}
-    async fn send_request(&self, mut request: Value) -> bool {{
-        let extra = Uuid::new_v4().to_string();
-        request[\"@extra\"] = serde_json::to_value(extra.clone()).unwrap();
+    impl Client {{
+        pub fn new() -> Self {{
+            Client {{
+                client_id: tdjson::create_client(),
+            }}
+        }}
+        async fn send_request(&self, mut request: Value) -> bool {{
+            let extra = Uuid::new_v4().to_string();
+            request[\"@extra\"] = serde_json::to_value(extra.clone()).unwrap();
 
-        let receiver = OBSERVER.subscribe(extra);
-        tdjson::send(self.client_id, request.to_string());
+            let receiver = OBSERVER.subscribe(extra);
+            tdjson::send(self.client_id, request.to_string());
 
-        receiver.await.unwrap()
-    }}\
+            receiver.await.unwrap()
+        }}\
     "
     )?;
 
@@ -114,6 +115,7 @@ impl Client {{
         }
     }
 
-    // End outermost impl
+    // End outermost mod and impl
+    writeln!(file, "    }}")?;
     writeln!(file, "}}")
 }
