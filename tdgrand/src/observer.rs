@@ -5,12 +5,13 @@
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::RwLock;
 use tokio::sync::oneshot;
 
 pub(super) struct Observer {
-    requests: RwLock<HashMap<String, oneshot::Sender<bool>>>,
+    requests: RwLock<HashMap<String, oneshot::Sender<Value>>>,
 }
 
 impl Observer {
@@ -20,21 +21,23 @@ impl Observer {
         }
     }
 
-    pub fn subscribe(&self, extra: String) -> oneshot::Receiver<bool> {
+    pub fn subscribe(&self, extra: String) -> oneshot::Receiver<Value> {
         let (sender, receiver) = oneshot::channel();
         self.requests.write().unwrap().insert(extra, sender);
         receiver
     }
 
-    pub fn notify(&self, extra: &str) {
-        match self.requests.write().unwrap().remove(extra) {
-            Some(sender) => {
-                if let Err(_) = sender.send(true) {
-                    log::warn!("Got a response of an unaccessible request");
+    pub fn notify(&self, response: Value) {
+        if let Some(extra) = response["@extra"].as_str() {
+            match self.requests.write().unwrap().remove(extra) {
+                Some(sender) => {
+                    if let Err(_) = sender.send(response) {
+                        log::warn!("Got a response of an unaccessible request");
+                    }
                 }
-            }
-            None => {
-                log::warn!("Got a response of an unknown request");
+                None => {
+                    log::warn!("Got a response of an unknown request");
+                }
             }
         }
     }

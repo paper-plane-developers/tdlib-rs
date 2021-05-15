@@ -36,16 +36,23 @@ pub struct RawVec<T>(pub Vec<T>);
 pub fn step() -> Option<(Update, i32)> {
     let response = tdjson::receive(2.0);
     if let Some(response) = response {
-        let json: Value = serde_json::from_str(&response).unwrap();
+        let response: Value = serde_json::from_str(&response).unwrap();
 
-        if let Some(td_extra) = json["@extra"].as_str() {
-            OBSERVER.notify(td_extra);
-        }
-
-        let td_type = json["@type"].as_str().unwrap();
-        if td_type.starts_with("update") {
-            let td_client_id = json["@client_id"].as_i64().unwrap();
-            return Some((serde_json::from_value(json).unwrap(), td_client_id as i32));
+        match response["@extra"].as_str() {
+            Some(_) => {
+                OBSERVER.notify(response);
+            }
+            None => {
+                let client_id = response["@client_id"].as_i64().unwrap() as i32;
+                match serde_json::from_value(response) {
+                    Ok(update) => {
+                        return Some((update, client_id));
+                    }
+                    Err(_) => {
+                        log::warn!("Got an unknown response");
+                    }
+                }
+            }
         }
     }
 

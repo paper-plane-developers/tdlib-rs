@@ -42,7 +42,7 @@ fn write_method<W: Write>(
             }
         }
     }
-    writeln!(file, ") -> bool {{")?;
+    writeln!(file, ") -> {} {{", rustifier::types::qual_name(&def.ty))?;
 
     // Write method content
     writeln!(file, "            let request = json!({{")?;
@@ -62,7 +62,8 @@ fn write_method<W: Write>(
         }
     }
     writeln!(file, "            }});")?;
-    writeln!(file, "            self.send_request(request).await")?;
+    writeln!(file, "            let response = self.send_request(request).await;")?;
+    writeln!(file, "            serde_json::from_value(response).unwrap()")?;
 
     writeln!(file, "        }}")?;
     Ok(())
@@ -91,7 +92,7 @@ pub mod client {{
                 client_id: tdjson::create_client(),
             }}
         }}
-        async fn send_request(&self, mut request: Value) -> bool {{
+        async fn send_request(&self, mut request: Value) -> Value {{
             let extra = Uuid::new_v4().to_string();
             request[\"@extra\"] = serde_json::to_value(extra.clone()).unwrap();
 

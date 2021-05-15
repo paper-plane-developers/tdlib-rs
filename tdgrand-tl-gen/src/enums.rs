@@ -29,7 +29,6 @@ fn write_enum<W: Write>(
     ty: &Type,
     metadata: &Metadata,
 ) -> io::Result<()> {
-
     writeln!(file, "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]", indent)?;
     writeln!(file, "{}#[serde(tag = \"@type\")]", indent)?;
     writeln!(
