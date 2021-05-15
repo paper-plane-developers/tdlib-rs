@@ -142,25 +142,10 @@ pub mod types {
             }
             "double" => "f64",
             "int32" => "i32",
-            "int128" => {
-                if path {
-                    "<[u8; 16]>"
-                } else {
-                    "[u8; 16]"
-                }
-            }
-            "int256" => {
-                if path {
-                    "<[u8; 32]>"
-                } else {
-                    "[u8; 32]"
-                }
-            }
-            "long" => "i64",
+            "int53" => "i64",
+            "int64" => "i64",
             "string" => "String",
-            "true" => "bool",
             "vector" => "crate::RawVec",
-            "Vector" => "Vec",
             _ => return None,
         })
     }
