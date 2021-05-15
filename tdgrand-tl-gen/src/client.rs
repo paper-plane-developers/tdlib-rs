@@ -24,7 +24,7 @@ fn write_method<W: Write>(
     // Define method
     write!(
         file,
-        "    pub async fn {}(&self",
+        "        pub async fn {}(&self",
         rustifier::definitions::function_name(def),
     )?;
     for param in def.params.iter() {
@@ -45,8 +45,8 @@ fn write_method<W: Write>(
     writeln!(file, ") -> bool {{")?;
 
     // Write method content
-    writeln!(file, "        let request = json!({{")?;
-    writeln!(file, "            \"@type\": \"{}\",", def.name)?;
+    writeln!(file, "            let request = json!({{")?;
+    writeln!(file, "                \"@type\": \"{}\",", def.name)?;
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
@@ -55,16 +55,16 @@ fn write_method<W: Write>(
             ParameterType::Normal { .. } => {
                 writeln!(
                     file,
-                    "            \"{0}\": {0},",
+                    "                \"{0}\": {0},",
                     rustifier::parameters::attr_name(param),
                 )?;
             }
         }
     }
-    writeln!(file, "        }});")?;
-    writeln!(file, "        self.send_request(request).await")?;
+    writeln!(file, "            }});")?;
+    writeln!(file, "            self.send_request(request).await")?;
 
-    writeln!(file, "    }}")?;
+    writeln!(file, "        }}")?;
     Ok(())
 }
 
