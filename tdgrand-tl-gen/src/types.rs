@@ -117,7 +117,7 @@ pub mod types {{
 
         for definition in grouped[key]
             .iter()
-            .filter(|def| !ignore_type(&def.ty))
+            .filter(|def| !def.params.is_empty() && !ignore_type(&def.ty))
         {
             write_struct(&mut file, indent, definition, metadata)?;
         }
