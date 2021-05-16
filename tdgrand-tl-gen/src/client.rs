@@ -10,7 +10,6 @@
 //! Code to generate Rust's `function`'s from TL definitions.
 
 use crate::grouper;
-use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use grammers_tl_parser::tl::{Category, Definition, ParameterType};
@@ -108,9 +107,7 @@ pub mod client {{
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();
     sorted_keys.sort();
     for key in sorted_keys.into_iter() {
-        for definition in grouped[key]
-            .iter()
-            .filter(|def| !ignore_type(&def.ty))
+        for definition in grouped[key].iter()
         {
             write_method(&mut file, definition, metadata)?;
         }
