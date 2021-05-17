@@ -130,16 +130,10 @@ pub mod definitions {
 pub mod types {
     use super::*;
 
-    fn builtin_type(ty: &Type, path: bool) -> Option<&'static str> {
+    fn builtin_type(ty: &Type, _path: bool) -> Option<&'static str> {
         Some(match ty.name.as_ref() {
             "Bool" => "bool",
-            "bytes" => {
-                if path {
-                    "Vec::<u8>"
-                } else {
-                    "Vec<u8>"
-                }
-            }
+            "bytes" => "String",
             "double" => "f64",
             "int32" => "i32",
             "int53" => "i64",
