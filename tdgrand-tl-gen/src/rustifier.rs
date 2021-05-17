@@ -137,7 +137,7 @@ pub mod types {
             "double" => "f64",
             "int32" => "i32",
             "int53" => "i64",
-            "int64" => "i64",
+            "int64" => "String", // Tdlib handles int64 values as strings for some reason
             "string" => "String",
             "vector" => "crate::RawVec",
             _ => return None,
