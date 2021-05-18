@@ -25,7 +25,7 @@ pub(crate) static OBSERVER: Lazy<observer::Observer> =
 /// common, so instead of creating a enum for `Vector` wrapping `vector`
 /// as Rust's `Vec` (as we would do with auto-generated code),
 /// a new-type for `vector` is used instead.
-#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct RawVec<T>(pub Vec<T>);
 
 /// Receive a single response from TdLib. If the response is an update, it

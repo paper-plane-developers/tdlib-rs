@@ -2,7 +2,7 @@ use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use tdgrand::{
     self, Client,
     enums::{AuthorizationState, Update, User},
-    types::{PhoneNumberAuthenticationSettings, TdlibParameters},
+    types::TdlibParameters,
 };
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -27,21 +27,13 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
         match state {
             AuthorizationState::WaitTdlibParameters => {
                 let parameters = TdlibParameters {
-                    use_test_dc: false,
                     database_directory: "get_me_db".to_string(),
-                    files_directory: "".to_string(),
-                    use_file_database: false,
-                    use_chat_info_database: false,
-                    use_message_database: false,
-                    use_secret_chats: false,
                     api_id: env!("API_ID").parse::<i32>().unwrap(),
                     api_hash: env!("API_HASH").to_string(),
                     system_language_code: "en".to_string(),
                     device_model: "Desktop".to_string(),
-                    system_version: "".to_string(),
                     application_version: env!("CARGO_PKG_VERSION").to_string(),
-                    enable_storage_optimizer: false,
-                    ignore_file_names: false,
+                    ..Default::default()
                 };
 
                 client.set_tdlib_parameters(parameters).await;
@@ -52,12 +44,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
             }
             AuthorizationState::WaitPhoneNumber => {
                 let input = ask_user("Enter your phone number (include the country calling code):");
-                let settings = PhoneNumberAuthenticationSettings {
-                    allow_flash_call: false,
-                    is_current_phone_number: false,
-                    allow_sms_retriever_api: false,
-                };
-                client.set_authentication_phone_number(input, settings).await;
+                client.set_authentication_phone_number(input, Default::default()).await;
             }
             AuthorizationState::WaitCode(_) => {
                 let input = ask_user("Enter the verification code:");

@@ -61,7 +61,7 @@ fn write_struct<W: Write>(
     _metadata: &Metadata,
 ) -> io::Result<()> {
     // Define struct
-    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]", indent)?;
+    writeln!(file, "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]", indent)?;
     write!(
         file,
         "{}pub struct {}{} {{",

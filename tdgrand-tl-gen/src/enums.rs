@@ -68,6 +68,54 @@ fn write_enum<W: Write>(
     Ok(())
 }
 
+/// Defines the `impl Default` corresponding to the definition:
+///
+/// ```ignore
+/// impl Default for Enum {
+/// }
+/// ```
+fn write_impl_default<W: Write>(
+    file: &mut W,
+    indent: &str,
+    ty: &Type,
+    metadata: &Metadata,
+) -> io::Result<()> {
+    writeln!(
+        file,
+        "{}impl Default for {} {{",
+        indent,
+        rustifier::types::type_name(ty),
+    )?;
+
+    let def = metadata.defs_with_type(ty)[0];
+    write!(
+        file,
+        "{}    fn default() -> Self {{ {}::{}",
+        indent,
+        rustifier::types::type_name(ty),
+        rustifier::definitions::variant_name(def),
+    )?;
+    if !def.params.is_empty() {
+        write!(file, "(Default::default())")?;
+    }
+    writeln!(file, " }}")?;
+
+    writeln!(file, "{}}}", indent)?;
+    Ok(())
+}
+
+/// Writes an entire definition as Rust code (`enum` and `impl`).
+fn write_definition<W: Write>(
+    file: &mut W,
+    indent: &str,
+    ty: &Type,
+    metadata: &Metadata,
+) -> io::Result<()> {
+    write_enum(file, indent, ty, metadata)?;
+    write_impl_default(file, indent, ty, metadata)?;
+    Ok(())
+}
+
 /// Write the entire module dedicated to enums.
 pub(crate) fn write_enums_mod<W: Write>(
     mut file: &mut W,
@@ -93,7 +141,7 @@ pub mod enums {{
         };
 
         for ty in grouped[key].iter().filter(|ty| !ignore_type(*ty)) {
-            write_enum(&mut file, indent, ty, metadata)?;
+            write_definition(&mut file, indent, ty, metadata)?;
         }
 
         // End possibly inner mod
