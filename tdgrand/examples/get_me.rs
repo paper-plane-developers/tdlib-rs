@@ -36,19 +36,37 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
                     ..Default::default()
                 };
 
-                client.set_tdlib_parameters(parameters).await;
+                let response = client.set_tdlib_parameters(parameters).await;
+                if let Err(error) = response {
+                    println!("{}", error.message);
+                }
             }
             AuthorizationState::WaitEncryptionKey(_) => {
-                let input = ask_user("Enter your encryption key (you can leave this empty if you want):");
-                client.check_database_encryption_key(input).await;
+                loop {
+                    let input = ask_user("Enter your encryption key (you can leave this empty if you want):");
+                    match client.check_database_encryption_key(input).await {
+                        Ok(_) => break,
+                        Err(e) => println!("{}", e.message),
+                    }
+                }
             }
             AuthorizationState::WaitPhoneNumber => {
-                let input = ask_user("Enter your phone number (include the country calling code):");
-                client.set_authentication_phone_number(input, Default::default()).await;
+                loop {
+                    let input = ask_user("Enter your phone number (include the country calling code):");
+                    match client.set_authentication_phone_number(input, Default::default()).await {
+                        Ok(_) => break,
+                        Err(e) => println!("{}", e.message),
+                    }
+                }
             }
             AuthorizationState::WaitCode(_) => {
-                let input = ask_user("Enter the verification code:");
-                client.check_authentication_code(input).await;
+                loop {
+                    let input = ask_user("Enter the verification code:");
+                    match client.check_authentication_code(input).await {
+                        Ok(_) => break,
+                        Err(e) => println!("{}", e.message),
+                    }
+                }
             }
             AuthorizationState::Ready => {
                 break;
@@ -91,17 +109,17 @@ async fn main() {
     // Set a fairly low verbosity level. We mainly do this because tdlib
     // requires to perform a random request with the client to start receiving
     // updates for it.
-    client.set_log_verbosity_level(1).await;
+    client.set_log_verbosity_level(1).await.unwrap();
 
     // Handle the authorization state to authenticate the client
     let auth_rx = handle_authorization_state(&client, auth_rx, run_flag.clone()).await;
 
     // Run the get_me() method to get user informations
-    let User::User(me) = client.get_me().await;
+    let User::User(me) = client.get_me().await.unwrap();
     println!("Hi, I'm {}", me.username);
 
     // Tell the client to close
-    client.close().await;
+    client.close().await.unwrap();
 
     // Handle the authorization state to wait for the "Closed" state
     handle_authorization_state(&client, auth_rx, run_flag.clone()).await;

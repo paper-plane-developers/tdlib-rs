@@ -41,7 +41,7 @@ fn write_method<W: Write>(
             }
         }
     }
-    writeln!(file, ") -> {} {{", rustifier::types::qual_name(&def.ty))?;
+    writeln!(file, ") -> Result<{}, crate::types::Error> {{", rustifier::types::qual_name(&def.ty))?;
 
     // Write method content
     writeln!(file, "            let request = json!({{")?;
@@ -62,7 +62,10 @@ fn write_method<W: Write>(
     }
     writeln!(file, "            }});")?;
     writeln!(file, "            let response = self.send_request(request).await;")?;
-    writeln!(file, "            serde_json::from_value(response).unwrap()")?;
+    writeln!(file, "            if response[\"@type\"] == \"error\" {{")?;
+    writeln!(file, "                return Err(serde_json::from_value(response).unwrap())")?;
+    writeln!(file, "            }}")?;
+    writeln!(file, "            Ok(serde_json::from_value(response).unwrap())")?;
 
     writeln!(file, "        }}")?;
     Ok(())
