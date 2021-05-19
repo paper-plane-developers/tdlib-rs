@@ -74,14 +74,14 @@ fn write_function<W: Write>(
     Ok(())
 }
 
-/// Write the entire module dedicated to the client.
+/// Write the entire module dedicated to functions.
 pub(crate) fn write_client_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    writeln!(file, "pub mod client {{")?;
+    writeln!(file, "pub mod functions {{")?;
     writeln!(file, "    use crate::send_request;")?;
     writeln!(file, "    use serde_json::json;")?;
 

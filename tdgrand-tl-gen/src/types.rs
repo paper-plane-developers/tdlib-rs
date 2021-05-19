@@ -98,9 +98,8 @@ pub(crate) fn write_types_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    writeln!(file, "\
-pub mod types {{
-    use serde::{{Deserialize, Serialize}};")?;
+    writeln!(file, "pub mod types {{")?;
+    writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
 
     let grouped = grouper::group_by_ns(definitions, Category::Types);
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();
@@ -110,7 +109,6 @@ pub mod types {{
         let indent = if key.is_empty() {
             "    "
         } else {
-            writeln!(file, "    #[allow(clippy::unreadable_literal)]")?;
             writeln!(file, "    pub mod {} {{", key)?;
             "        "
         };

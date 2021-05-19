@@ -123,9 +123,8 @@ pub(crate) fn write_enums_mod<W: Write>(
     metadata: &Metadata,
 ) -> io::Result<()> {
     // Begin outermost mod
-    writeln!(file, "\
-pub mod enums {{
-    use serde::{{Deserialize, Serialize}};")?;
+    writeln!(file, "pub mod enums {{")?;
+    writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
 
     let grouped = grouper::group_types_by_ns(definitions);
     let mut sorted_keys: Vec<&Option<String>> = grouped.keys().collect();
@@ -133,7 +132,6 @@ pub mod enums {{
     for key in sorted_keys.into_iter() {
         // Begin possibly inner mod
         let indent = if let Some(ns) = key {
-            writeln!(file, "    #[allow(clippy::large_enum_variant)]")?;
             writeln!(file, "    pub mod {} {{", ns)?;
             "        "
         } else {

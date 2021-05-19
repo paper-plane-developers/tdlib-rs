@@ -9,7 +9,7 @@
 
 //! This module gathers all the code generation submodules and coordinates
 //! them, feeding them the right data.
-mod client;
+mod functions;
 mod enums;
 mod grouper;
 mod metadata;
@@ -51,7 +51,7 @@ pub fn generate_rust_code(
     let metadata = metadata::Metadata::new(&definitions);
     types::write_types_mod(file, definitions, &metadata)?;
     enums::write_enums_mod(file, definitions, &metadata)?;
-    client::write_client_mod(file, definitions, &metadata)?;
+    functions::write_client_mod(file, definitions, &metadata)?;
 
     Ok(())
 }

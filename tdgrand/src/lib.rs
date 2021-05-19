@@ -10,7 +10,7 @@ mod generated;
 mod observer;
 mod tdjson;
 
-pub use generated::{client, enums, types};
+pub use generated::{functions, enums, types};
 
 use enums::Update;
 use once_cell::sync::Lazy;
