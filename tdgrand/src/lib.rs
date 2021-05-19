@@ -10,12 +10,13 @@ mod generated;
 mod observer;
 mod tdjson;
 
-pub use generated::{client::Client, enums, types};
+pub use generated::{client, enums, types};
 
+use enums::Update;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use enums::Update;
+use uuid::Uuid;
 
 pub(crate) static OBSERVER: Lazy<observer::Observer> =
     Lazy::new(|| observer::Observer::new());
@@ -27,6 +28,10 @@ pub(crate) static OBSERVER: Lazy<observer::Observer> =
 /// a new-type for `vector` is used instead.
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct RawVec<T>(pub Vec<T>);
+
+pub fn crate_client() -> i32 {
+    tdjson::create_client()
+}
 
 /// Receive a single response from TdLib. If the response is an update, it
 /// returns a tuple with the `Update` and the associated `client_id`.
@@ -57,4 +62,14 @@ pub fn step() -> Option<(Update, i32)> {
     }
 
     None
+}
+
+pub(crate) async fn send_request(client_id: i32, mut request: Value) -> Value {
+    let extra = Uuid::new_v4().to_string();
+    request["@extra"] = serde_json::to_value(extra.clone()).unwrap();
+
+    let receiver = OBSERVER.subscribe(extra);
+    tdjson::send(client_id, request.to_string());
+
+    receiver.await.unwrap()
 }

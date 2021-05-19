@@ -15,15 +15,17 @@ use crate::rustifier;
 use grammers_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
 
-fn write_method<W: Write>(
+fn write_function<W: Write>(
     file: &mut W,
+    indent: &str,
     def: &Definition,
     _metadata: &Metadata,
 ) -> io::Result<()> {
-    // Define method
+    // Define function
     write!(
         file,
-        "        pub async fn {}(&self",
+        "{}pub async fn {}(client_id: i32",
+        indent,
         rustifier::definitions::function_name(def),
     )?;
     for param in def.params.iter() {
@@ -43,9 +45,9 @@ fn write_method<W: Write>(
     }
     writeln!(file, ") -> Result<{}, crate::types::Error> {{", rustifier::types::qual_name(&def.ty))?;
 
-    // Write method content
-    writeln!(file, "            let request = json!({{")?;
-    writeln!(file, "                \"@type\": \"{}\",", def.name)?;
+    // Write function content
+    writeln!(file, "{}    let request = json!({{", indent)?;
+    writeln!(file, "{}        \"@type\": \"{}\",", indent, def.name)?;
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
@@ -54,20 +56,21 @@ fn write_method<W: Write>(
             ParameterType::Normal { .. } => {
                 writeln!(
                     file,
-                    "                \"{0}\": {0},",
+                    "{}        \"{1}\": {1},",
+                    indent,
                     rustifier::parameters::attr_name(param),
                 )?;
             }
         }
     }
-    writeln!(file, "            }});")?;
-    writeln!(file, "            let response = self.send_request(request).await;")?;
-    writeln!(file, "            if response[\"@type\"] == \"error\" {{")?;
-    writeln!(file, "                return Err(serde_json::from_value(response).unwrap())")?;
-    writeln!(file, "            }}")?;
-    writeln!(file, "            Ok(serde_json::from_value(response).unwrap())")?;
+    writeln!(file, "{}    }});", indent)?;
+    writeln!(file, "{}    let response = send_request(client_id, request).await;", indent)?;
+    writeln!(file, "{}    if response[\"@type\"] == \"error\" {{", indent)?;
+    writeln!(file, "{}        return Err(serde_json::from_value(response).unwrap())", indent)?;
+    writeln!(file, "{}    }}", indent)?;
+    writeln!(file, "{}    Ok(serde_json::from_value(response).unwrap())", indent)?;
 
-    writeln!(file, "        }}")?;
+    writeln!(file, "{}}}", indent)?;
     Ok(())
 }
 
@@ -77,46 +80,33 @@ pub(crate) fn write_client_mod<W: Write>(
     definitions: &[Definition],
     metadata: &Metadata,
 ) -> io::Result<()> {
-    // Begin outermost mod and impl
-    writeln!(
-        file,
-        "\
-pub mod client {{
-    use crate::{{tdjson, OBSERVER}};
-    use serde_json::{{json, Value}};
-    use uuid::Uuid;
-    pub struct Client {{
-        client_id: i32,
-    }}
-    impl Client {{
-        pub fn new() -> Self {{
-            Client {{
-                client_id: tdjson::create_client(),
-            }}
-        }}
-        async fn send_request(&self, mut request: Value) -> Value {{
-            let extra = Uuid::new_v4().to_string();
-            request[\"@extra\"] = serde_json::to_value(extra.clone()).unwrap();
-
-            let receiver = OBSERVER.subscribe(extra);
-            tdjson::send(self.client_id, request.to_string());
-
-            receiver.await.unwrap()
-        }}\
-    "
-    )?;
+    // Begin outermost mod
+    writeln!(file, "pub mod client {{")?;
+    writeln!(file, "    use crate::send_request;")?;
+    writeln!(file, "    use serde_json::json;")?;
 
     let grouped = grouper::group_by_ns(definitions, Category::Functions);
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();
     sorted_keys.sort();
     for key in sorted_keys.into_iter() {
-        for definition in grouped[key].iter()
-        {
-            write_method(&mut file, definition, metadata)?;
+        // Begin possibly inner mod
+        let indent = if key.is_empty() {
+            "    "
+        } else {
+            writeln!(file, "    pub mod {} {{", key)?;
+            "        "
+        };
+
+        for definition in grouped[key].iter() {
+            write_function(&mut file, indent, definition, metadata)?;
+        }
+
+        // End possibly inner mod
+        if !key.is_empty() {
+            writeln!(file, "    }}")?;
         }
     }
 
-    // End outermost mod and impl
-    writeln!(file, "    }}")?;
+    // End outermost mod
     writeln!(file, "}}")
 }

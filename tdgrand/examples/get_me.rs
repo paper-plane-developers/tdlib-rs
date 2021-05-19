@@ -1,6 +1,7 @@
 use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use tdgrand::{
-    self, Client,
+    self,
+    client,
     enums::{AuthorizationState, Update, User},
     types::TdlibParameters,
 };
@@ -22,7 +23,7 @@ async fn handle_update(update: Update, auth_tx: &Sender<AuthorizationState>) {
     }
 }
 
-async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<AuthorizationState>, run_flag: Arc<AtomicBool>) -> Receiver<AuthorizationState> {
+async fn handle_authorization_state(client_id: i32, mut auth_rx: Receiver<AuthorizationState>, run_flag: Arc<AtomicBool>) -> Receiver<AuthorizationState> {
     while let Some(state) = auth_rx.recv().await {
         match state {
             AuthorizationState::WaitTdlibParameters => {
@@ -36,7 +37,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
                     ..Default::default()
                 };
 
-                let response = client.set_tdlib_parameters(parameters).await;
+                let response = client::set_tdlib_parameters(client_id, parameters).await;
                 if let Err(error) = response {
                     println!("{}", error.message);
                 }
@@ -44,7 +45,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
             AuthorizationState::WaitEncryptionKey(_) => {
                 loop {
                     let input = ask_user("Enter your encryption key (you can leave this empty if you want):");
-                    match client.check_database_encryption_key(input).await {
+                    match client::check_database_encryption_key(client_id, input).await {
                         Ok(_) => break,
                         Err(e) => println!("{}", e.message),
                     }
@@ -53,7 +54,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
             AuthorizationState::WaitPhoneNumber => {
                 loop {
                     let input = ask_user("Enter your phone number (include the country calling code):");
-                    match client.set_authentication_phone_number(input, Default::default()).await {
+                    match client::set_authentication_phone_number(client_id, input, Default::default()).await {
                         Ok(_) => break,
                         Err(e) => println!("{}", e.message),
                     }
@@ -62,7 +63,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
             AuthorizationState::WaitCode(_) => {
                 loop {
                     let input = ask_user("Enter the verification code:");
-                    match client.check_authentication_code(input).await {
+                    match client::check_authentication_code(client_id, input).await {
                         Ok(_) => break,
                         Err(e) => println!("{}", e.message),
                     }
@@ -87,7 +88,7 @@ async fn handle_authorization_state(client: &Client, mut auth_rx: Receiver<Autho
 #[tokio::main]
 async fn main() {
     // Create the client object
-    let client = Client::new();
+    let client_id = tdgrand::crate_client();
 
     // Create a mpsc channel for handling AuthorizationState updates separately
     // from the task
@@ -109,20 +110,20 @@ async fn main() {
     // Set a fairly low verbosity level. We mainly do this because tdlib
     // requires to perform a random request with the client to start receiving
     // updates for it.
-    client.set_log_verbosity_level(1).await.unwrap();
+    client::set_log_verbosity_level(client_id, 1).await.unwrap();
 
     // Handle the authorization state to authenticate the client
-    let auth_rx = handle_authorization_state(&client, auth_rx, run_flag.clone()).await;
+    let auth_rx = handle_authorization_state(client_id, auth_rx, run_flag.clone()).await;
 
     // Run the get_me() method to get user informations
-    let User::User(me) = client.get_me().await.unwrap();
+    let User::User(me) = client::get_me(client_id).await.unwrap();
     println!("Hi, I'm {}", me.username);
 
     // Tell the client to close
-    client.close().await.unwrap();
+    client::close(client_id).await.unwrap();
 
     // Handle the authorization state to wait for the "Closed" state
-    handle_authorization_state(&client, auth_rx, run_flag.clone()).await;
+    handle_authorization_state(client_id, auth_rx, run_flag.clone()).await;
 
     // Wait for the previously spawned task to end the execution
     handle.await.unwrap();
