@@ -31,7 +31,7 @@ impl Observer {
         if let Some(extra) = response["@extra"].as_str() {
             match self.requests.write().unwrap().remove(extra) {
                 Some(sender) => {
-                    if let Err(_) = sender.send(response) {
+                    if sender.send(response).is_err() {
                         log::warn!("Got a response of an unaccessible request");
                     }
                 }
