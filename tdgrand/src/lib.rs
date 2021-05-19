@@ -29,16 +29,17 @@ pub(crate) static OBSERVER: Lazy<observer::Observer> =
 #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
 pub struct RawVec<T>(pub Vec<T>);
 
+/// Create a TdLib client returning its id. Note that to start receiving
+/// updates for a client you need to send at least a request with it first.
 pub fn crate_client() -> i32 {
     tdjson::create_client()
 }
 
-/// Receive a single response from TdLib. If the response is an update, it
+/// Receive a single update or response from TdLib. If it's an update, it
 /// returns a tuple with the `Update` and the associated `client_id`.
-/// Note that to start receiving updates for a `Client` you need to send
-/// at least a request with it first, so maybe you should request something
-/// like `client.test_network()` first.
-pub fn step() -> Option<(Update, i32)> {
+/// Note that to start receiving updates for a client you need to send
+/// at least a request with it first.
+pub fn receive() -> Option<(Update, i32)> {
     let response = tdjson::receive(2.0);
     if let Some(response) = response {
         let response: Value = serde_json::from_str(&response).unwrap();

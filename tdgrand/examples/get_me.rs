@@ -101,7 +101,7 @@ async fn main() {
     // Spawn a task to receive updates/responses
     let handle = tokio::spawn(async move {
         while run_flag_clone.load(Ordering::Acquire) {
-            if let Some((update, _client_id)) = tdgrand::step() {
+            if let Some((update, _client_id)) = tdgrand::receive() {
                 handle_update(update, &auth_tx).await;
             }
         }
