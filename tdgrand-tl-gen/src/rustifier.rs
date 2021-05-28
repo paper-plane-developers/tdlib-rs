@@ -1,3 +1,4 @@
+// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -103,7 +104,7 @@ pub mod definitions {
                 // Use the name from the last uppercase letter
                 &name[name
                     .as_bytes()
-                    .into_iter()
+                    .iter()
                     .rposition(|c| c.is_ascii_uppercase())
                     .unwrap_or(0)..]
             }
@@ -111,7 +112,7 @@ pub mod definitions {
                 // Use the name from the second-to-last uppercase letter
                 &name[name
                     .as_bytes()
-                    .into_iter()
+                    .iter()
                     .take(name.len() - variant.len())
                     .rposition(|c| c.is_ascii_uppercase())
                     .unwrap_or(0)..]

@@ -24,10 +24,7 @@ use std::io::{self, Write};
 const SPECIAL_CASED_TYPES: [&str; 5] = ["Bool", "Bytes", "Int32", "Int53", "Int64"];
 
 fn ignore_type(ty: &Type) -> bool {
-    SPECIAL_CASED_TYPES
-        .iter()
-        .find(|&&x| x == ty.name)
-        .is_some()
+    SPECIAL_CASED_TYPES.iter().any(|&x| x == ty.name)
 }
 
 pub fn generate_rust_code(
@@ -51,7 +48,7 @@ pub fn generate_rust_code(
     let metadata = metadata::Metadata::new(&definitions);
     types::write_types_mod(file, definitions, &metadata)?;
     enums::write_enums_mod(file, definitions, &metadata)?;
-    functions::write_client_mod(file, definitions, &metadata)?;
+    functions::write_functions_mod(file, definitions, &metadata)?;
 
     Ok(())
 }

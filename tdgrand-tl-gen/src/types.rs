@@ -70,7 +70,7 @@ fn write_struct<W: Write>(
         get_generic_param_list(def, true),
     )?;
 
-    writeln!(file, "")?;
+    writeln!(file)?;
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
@@ -88,6 +88,17 @@ fn write_struct<W: Write>(
         }
     }
     writeln!(file, "{}}}", indent)?;
+    Ok(())
+}
+
+/// Writes an entire definition as Rust code (`struct`).
+fn write_definition<W: Write>(
+    file: &mut W,
+    indent: &str,
+    def: &Definition,
+    metadata: &Metadata,
+) -> io::Result<()> {
+    write_struct(file, indent, def, metadata)?;
     Ok(())
 }
 
@@ -117,7 +128,7 @@ pub(crate) fn write_types_mod<W: Write>(
             .iter()
             .filter(|def| !def.params.is_empty() && !ignore_type(&def.ty))
         {
-            write_struct(&mut file, indent, definition, metadata)?;
+            write_definition(&mut file, indent, definition, metadata)?;
         }
 
         // End possibly inner mod

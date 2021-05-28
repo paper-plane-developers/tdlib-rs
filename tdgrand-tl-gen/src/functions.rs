@@ -7,7 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-//! Code to generate Rust's `function`'s from TL definitions.
+//! Code to generate Rust's `fn`'s from TL definitions.
 
 use crate::grouper;
 use crate::metadata::Metadata;
@@ -15,7 +15,45 @@ use crate::rustifier;
 use grammers_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
 
-fn write_function<W: Write>(
+/// Get the list of generic parameters:
+///
+/// ```ignore
+/// <X, Y>
+/// ```
+fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
+    let mut result = String::new();
+    for param in def.params.iter() {
+        match param.ty {
+            ParameterType::Flags => {}
+            ParameterType::Normal { ref ty, .. } => {
+                if ty.generic_ref {
+                    if result.is_empty() {
+                        result.push('<');
+                    } else {
+                        result.push_str(", ");
+                    }
+                    result.push_str(&ty.name);
+                    if declaring {
+                        result.push_str(": crate::RemoteCall");
+                    }
+                }
+            }
+        }
+    }
+    if !result.is_empty() {
+        result.push('>');
+    }
+    result
+}
+
+/// Defines the `fn` corresponding to the definition:
+///
+/// ```ignore
+/// pub async fn Name(field: Type) {
+///     // Content
+/// }
+/// ```
+fn write_fn<W: Write>(
     file: &mut W,
     indent: &str,
     def: &Definition,
@@ -24,9 +62,10 @@ fn write_function<W: Write>(
     // Define function
     write!(
         file,
-        "{}pub async fn {}(client_id: i32",
+        "{}pub async fn {}{}(client_id: i32",
         indent,
         rustifier::definitions::function_name(def),
+        get_generic_param_list(def, true),
     )?;
     for param in def.params.iter() {
         match param.ty {
@@ -45,7 +84,6 @@ fn write_function<W: Write>(
     }
     writeln!(file, ") -> Result<{}, crate::types::Error> {{", rustifier::types::qual_name(&def.ty))?;
 
-    // Write function content
     writeln!(file, "{}    let request = json!({{", indent)?;
     writeln!(file, "{}        \"@type\": \"{}\",", indent, def.name)?;
     for param in def.params.iter() {
@@ -69,13 +107,23 @@ fn write_function<W: Write>(
     writeln!(file, "{}        return Err(serde_json::from_value(response).unwrap())", indent)?;
     writeln!(file, "{}    }}", indent)?;
     writeln!(file, "{}    Ok(serde_json::from_value(response).unwrap())", indent)?;
-
     writeln!(file, "{}}}", indent)?;
     Ok(())
 }
 
+/// Writes an entire definition as Rust code (`fn`).
+fn write_definition<W: Write>(
+    file: &mut W,
+    indent: &str,
+    def: &Definition,
+    metadata: &Metadata,
+) -> io::Result<()> {
+    write_fn(file, indent, def, metadata)?;
+    Ok(())
+}
+
 /// Write the entire module dedicated to functions.
-pub(crate) fn write_client_mod<W: Write>(
+pub(crate) fn write_functions_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
@@ -98,7 +146,7 @@ pub(crate) fn write_client_mod<W: Write>(
         };
 
         for definition in grouped[key].iter() {
-            write_function(&mut file, indent, definition, metadata)?;
+            write_definition(&mut file, indent, definition, metadata)?;
         }
 
         // End possibly inner mod
