@@ -1,9 +1,11 @@
 [package]
-name = "tdgrand-tl-gen"
+name = "tdgrand-tl-parser"
 version = "0.1.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-convert_case = "0.4"
-tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }
+crc32fast = "1.2.1"
+
+[dev-dependencies]
+toml = "0.5.8"

@@ -7,7 +7,7 @@
 // except according to those terms.
 use std::collections::{HashMap, HashSet};
 
-use grammers_tl_parser::tl::{Category, Definition, ParameterType, Type};
+use tdgrand_tl_parser::tl::{Category, Definition, ParameterType, Type};
 
 /// Additional metadata required by several parts of the generation.
 pub(crate) struct Metadata<'a> {

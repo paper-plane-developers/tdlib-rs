@@ -16,7 +16,7 @@ mod metadata;
 mod rustifier;
 mod types;
 
-use grammers_tl_parser::tl::{Definition, Type};
+use tdgrand_tl_parser::tl::{Definition, Type};
 use std::io::{self, Write};
 
 /// Don't generate types for definitions of this type,

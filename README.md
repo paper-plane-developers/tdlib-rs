@@ -4,5 +4,5 @@ A WIP client for the Telegram Database library. It includes a generator to autom
 
 ## Credits
 
-- [grammers](https://github.com/Lonami/grammers): the `tdgrand-tl-gen` is a fork of the `grammers-tl-gen`.
+- [grammers](https://github.com/Lonami/grammers): the `tdgrand-tl-gen` and `tdgrand-tl-parser` projects are forks of the `grammers-tl-gen` and `grammers-tl-parser` projects.
 - [rust-tdlib](https://github.com/aCLr/rust-tdlib): for inspiration about some client code.

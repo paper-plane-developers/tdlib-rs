@@ -13,8 +13,8 @@ tokio = { version = "1", features = ["sync"] }
 uuid = { version = "0.8", features = ["v4"] }
 
 [build-dependencies]
-grammers-tl-parser = "1.0"
 tdgrand-tl-gen = { path = "../tdgrand-tl-gen", version = "0.1" }
+tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

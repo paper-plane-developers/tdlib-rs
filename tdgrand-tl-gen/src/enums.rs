@@ -13,7 +13,7 @@ use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use crate::ignore_type;
-use grammers_tl_parser::tl::{Definition, Type};
+use tdgrand_tl_parser::tl::{Definition, Type};
 use std::io::{self, Write};
 
 /// Writes an enumeration listing all types such as the following rust code:

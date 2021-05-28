@@ -8,7 +8,7 @@
 
 //! Several functions to group definitions by a certain criteria.
 
-use grammers_tl_parser::tl::{Category, Definition, Type};
+use tdgrand_tl_parser::tl::{Category, Definition, Type};
 use std::collections::HashMap;
 
 /// Group the input vector by namespace, filtering by a certain category.

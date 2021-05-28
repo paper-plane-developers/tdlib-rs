@@ -19,7 +19,7 @@
 //! * `attr_name` for use as an attribute name (`foo_bar: ()`).
 
 use convert_case::{Case, Casing};
-use grammers_tl_parser::tl::{Definition, Parameter, ParameterType, Type};
+use tdgrand_tl_parser::tl::{Definition, Parameter, ParameterType, Type};
 
 /// Get the rusty type name for a certain definition, excluding namespace.
 ///

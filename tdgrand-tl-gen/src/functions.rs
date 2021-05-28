@@ -12,7 +12,7 @@
 use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
-use grammers_tl_parser::tl::{Category, Definition, ParameterType};
+use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
 
 /// Get the list of generic parameters:
