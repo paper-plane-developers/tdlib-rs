@@ -93,8 +93,13 @@ pub mod definitions {
         let name = type_name(def);
         let ty_name = types::type_name(&def.ty);
 
-        let variant = if name.starts_with(&ty_name) {
-            &name[ty_name.len()..]
+        let variant = if name.starts_with(&ty_name) && name.len() > ty_name.len() {
+            let variant_name = &name[ty_name.len()..];
+            if variant_name.chars().next().unwrap().is_ascii_lowercase() {
+                &name
+            } else {
+                variant_name
+            }
         } else {
             &name
         };
