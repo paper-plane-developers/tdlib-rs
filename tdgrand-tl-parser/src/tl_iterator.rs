@@ -35,7 +35,7 @@ impl Iterator for TlIterator {
     type Item = Result<Definition, ParseError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let definition = {
+        let (definition, has_separator) = {
             if self.index >= self.contents.len() {
                 return None;
             }
@@ -43,6 +43,7 @@ impl Iterator for TlIterator {
             let contents = &self.contents[self.index..];
             let mut in_comment = false;
             let mut end = contents.len();
+            let mut has_separator = false;
 
             for (i, c) in contents.chars().enumerate() {
                 if contents[i..contents.len().min(i + 2)] == *"//" {
@@ -53,6 +54,7 @@ impl Iterator for TlIterator {
 
                 if !in_comment && c == DEFINITION_SEP {
                     end = i;
+                    has_separator = true;
                     break;
                 }
             }
@@ -60,7 +62,7 @@ impl Iterator for TlIterator {
             let definition = contents[..end].trim();
             self.index = self.index + end + 1;
 
-            definition
+            (definition, has_separator)
         };
 
         // Get rid of the leading separator and adjust category
@@ -75,6 +77,11 @@ impl Iterator for TlIterator {
                 return Some(Err(ParseError::UnknownSeparator));
             }
         } else {
+            // Return None if the definition has no separator
+            if !has_separator {
+                return None;
+            }
+
             definition
         };
 
