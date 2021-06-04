@@ -19,6 +19,9 @@ pub struct Parameter {
 
     /// The type of the parameter.
     pub ty: ParameterType,
+
+    /// The description of the parameter.
+    pub description: String,
 }
 
 impl fmt::Display for Parameter {
@@ -73,6 +76,7 @@ impl FromStr for Parameter {
         Ok(Parameter {
             name: name.into(),
             ty: ty.parse()?,
+            description: String::new(),
         })
     }
 }
@@ -159,7 +163,8 @@ mod tests {
             Parameter::from_str("foo:#"),
             Ok(Parameter {
                 name: "foo".into(),
-                ty: ParameterType::Flags
+                ty: ParameterType::Flags,
+                description: String::new(),
             })
         );
         assert_eq!(
@@ -175,7 +180,8 @@ mod tests {
                         generic_arg: None,
                     },
                     flag: None,
-                }
+                },
+                description: String::new(),
             })
         );
         assert_eq!(
@@ -194,7 +200,8 @@ mod tests {
                         name: "bar".into(),
                         index: 1,
                     }),
-                }
+                },
+                description: String::new(),
             })
         );
         assert_eq!(
@@ -210,7 +217,8 @@ mod tests {
                         generic_arg: Some(Box::new("baz".parse().unwrap())),
                     },
                     flag: None,
-                }
+                },
+                description: String::new(),
             })
         );
         assert_eq!(
@@ -229,7 +237,8 @@ mod tests {
                         name: "bar".into(),
                         index: 1,
                     }),
-                }
+                },
+                description: String::new(),
             })
         );
     }

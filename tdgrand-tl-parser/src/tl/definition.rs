@@ -182,69 +182,88 @@ impl FromStr for Definition {
         let params = middle
             .split_whitespace()
             .map(Parameter::from_str)
-            .filter_map(|p| match p {
-                // If the parameter is a type definition save it
-                // and ignore this parameter.
-                Err(ParamParseError::TypeDef { name }) => {
-                    type_defs.push(name);
-                    None
-                }
+            .filter_map(|p| {
+                let mut result = match p {
+                    // If the parameter is a type definition save it
+                    // and ignore this parameter.
+                    Err(ParamParseError::TypeDef { name }) => {
+                        type_defs.push(name);
+                        None
+                    }
 
-                // If the parameter is a flag definition save both
-                // the definition and the parameter.
-                Ok(Parameter {
-                    ref name,
-                    ty: ParameterType::Flags,
-                }) => {
-                    flag_defs.push(name.clone());
-                    Some(Ok(p.unwrap()))
-                }
-
-                // If the parameter type is a generic ref ensure it's valid.
-                Ok(Parameter {
-                    ty:
-                        ParameterType::Normal {
-                            ty:
-                                Type {
-                                    ref name,
-                                    generic_ref,
-                                    ..
-                                },
-                            ..
-                        },
-                    ..
-                }) if generic_ref => {
-                    if generic_ref && !type_defs.contains(&name) {
-                        Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
-                    } else {
+                    // If the parameter is a flag definition save both
+                    // the definition and the parameter.
+                    Ok(Parameter {
+                        ref name,
+                        ty: ParameterType::Flags,
+                        ..
+                    }) => {
+                        flag_defs.push(name.clone());
                         Some(Ok(p.unwrap()))
+                    }
+
+                    // If the parameter type is a generic ref ensure it's valid.
+                    Ok(Parameter {
+                        ty:
+                            ParameterType::Normal {
+                                ty:
+                                    Type {
+                                        ref name,
+                                        generic_ref,
+                                        ..
+                                    },
+                                ..
+                            },
+                        ..
+                    }) if generic_ref => {
+                        if generic_ref && !type_defs.contains(&name) {
+                            Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
+                        } else {
+                            Some(Ok(p.unwrap()))
+                        }
+                    }
+
+                    // If the parameter type references a flag ensure it's valid
+                    Ok(Parameter {
+                        ty:
+                            ParameterType::Normal {
+                                flag: Some(Flag { ref name, .. }),
+                                ..
+                            },
+                        ..
+                    }) => {
+                        if !flag_defs.contains(&&name) {
+                            Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
+                        } else {
+                            Some(Ok(p.unwrap()))
+                        }
+                    }
+
+                    // Any other parameter that's okay should just be passed as-is.
+                    Ok(p) => Some(Ok(p)),
+
+                    // Unimplenented parameters are unimplemented definitions.
+                    Err(ParamParseError::NotImplemented) => Some(Err(ParseError::NotImplemented)),
+
+                    // Any error should just become a `ParseError`
+                    Err(x) => Some(Err(ParseError::InvalidParam(x))),
+                };
+
+                if let Some(ref mut result) = result {
+                    if let Ok(param) = result {
+                        let name = if param.name == "description" {
+                            "param_description"
+                        } else {
+                            &param.name
+                        };
+
+                        if let Some(description) = docs.remove(name) {
+                            param.description = description;
+                        }
                     }
                 }
 
-                // If the parameter type references a flag ensure it's valid
-                Ok(Parameter {
-                    ty:
-                        ParameterType::Normal {
-                            flag: Some(Flag { ref name, .. }),
-                            ..
-                        },
-                    ..
-                }) => {
-                    if !flag_defs.contains(&&name) {
-                        Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
-                    } else {
-                        Some(Ok(p.unwrap()))
-                    }
-                }
-
-                // Any other parameter that's okay should just be passed as-is.
-                Ok(p) => Some(Ok(p)),
-
-                // Unimplenented parameters are unimplemented definitions.
-                Err(ParamParseError::NotImplemented) => Some(Err(ParseError::NotImplemented)),
-
-                // Any error should just become a `ParseError`
-                Err(x) => Some(Err(ParseError::InvalidParam(x))),
+                result
             })
             .collect::<Result<_, ParseError>>()?;
 
@@ -454,6 +473,7 @@ mod tests {
                     Parameter {
                         name: "flags".into(),
                         ty: ParameterType::Flags,
+                        description: "This is a flags test description".into(),
                     },
                     Parameter {
                         name: "pname".into(),
@@ -476,6 +496,7 @@ mod tests {
                                 index: 10
                             })
                         },
+                        description: String::new(),
                     },
                 ],
                 ty: Type {

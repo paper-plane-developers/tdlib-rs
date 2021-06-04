@@ -78,13 +78,22 @@ fn write_struct<W: Write>(
                 // Flags are computed on-the-fly, not stored
             }
             ParameterType::Normal { .. } => {
-                writeln!(
+                write!(
                     file,
-                    "{}    pub {}: {},",
+                    "{}    pub {}: ",
                     indent,
                     rustifier::parameters::attr_name(param),
-                    rustifier::parameters::qual_name(param),
                 )?;
+
+                let is_optional = param.description.contains("may be null");
+                if is_optional {
+                    write!(file, "Option<")?;
+                }
+                write!(file, "{}", rustifier::parameters::qual_name(param))?;
+                if is_optional {
+                    write!(file, ">")?;
+                }
+                writeln!(file, ",")?;
             }
         }
     }
