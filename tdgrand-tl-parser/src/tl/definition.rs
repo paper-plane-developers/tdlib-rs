@@ -5,6 +5,7 @@
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+use std::collections::HashMap;
 use std::fmt;
 use std::str::FromStr;
 
@@ -29,6 +30,9 @@ pub struct Definition {
     /// If a definition has an identifier, it overrides this value.
     /// Otherwise, the identifier is inferred from the definition.
     pub id: u32,
+
+    /// The description of this definition.
+    pub description: String,
 
     /// A possibly-empty list of parameters this definition has.
     pub params: Vec<Parameter>,
@@ -87,6 +91,39 @@ impl FromStr for Definition {
             return Err(ParseError::Empty);
         }
 
+        let (definition, mut docs) = {
+            let mut docs = HashMap::new();
+            let mut comments_end = 0;
+
+            if let Some(start) = definition.rfind("//") {
+                if let Some(end) = definition[start..].find('\n') {
+                    comments_end = start + end;
+                }
+            }
+
+            let mut offset = 0;
+            while let Some(start) = definition[offset..].find('@') {
+                let start = start + offset;
+                let end = if let Some(end) = definition[start + 1..].find('@') {
+                    start + 1 + end
+                } else {
+                    comments_end
+                };
+
+                let comment = definition[start + 1..end].replace("//-", "");
+                let comment = comment.replace("//", "").trim().to_owned();
+                if let Some((name, content)) = comment.split_once(' ') {
+                    docs.insert(name.into(), content.into());
+                } else {
+                    docs.insert(comment, String::new());
+                }
+
+                offset = end;
+            }
+
+            (&definition[comments_end..], docs)
+        };
+
         // Parse `(left = ty)`
         let (left, ty) = {
             let mut it = definition.split('=');
@@ -129,6 +166,13 @@ impl FromStr for Definition {
         let id = match id {
             Some(v) => u32::from_str_radix(v.trim(), 16).map_err(ParseError::InvalidId)?,
             None => infer_id(definition),
+        };
+
+        // Parse `description`
+        let description = if let Some(description) = docs.remove("description") {
+            description.into()
+        } else {
+            String::new()
         };
 
         // Parse `middle`
@@ -214,6 +258,7 @@ impl FromStr for Definition {
             namespace,
             name,
             id,
+            description,
             params,
             ty,
             category: Category::Types,
@@ -394,13 +439,17 @@ mod tests {
 
     #[test]
     fn parse_complete() {
-        let def = "ns1.name#123 {X:Type} flags:# pname:flags.10?ns2.Vector<!X> = ns3.Type";
+        let def = "
+            //@description This is a test description
+            //@flags This is a flags test description
+            ns1.name#123 {X:Type} flags:# pname:flags.10?ns2.Vector<!X> = ns3.Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
                 namespace: vec!["ns1".into()],
                 name: "name".into(),
                 id: 0x123,
+                description: "This is a test description".into(),
                 params: vec![
                     Parameter {
                         name: "flags".into(),

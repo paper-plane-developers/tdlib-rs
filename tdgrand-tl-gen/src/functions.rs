@@ -60,6 +60,7 @@ fn write_fn<W: Write>(
     _metadata: &Metadata,
 ) -> io::Result<()> {
     // Define function
+    writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
     write!(
         file,
         "{}pub async fn {}{}(client_id: i32",

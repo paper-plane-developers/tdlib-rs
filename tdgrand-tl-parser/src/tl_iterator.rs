@@ -7,9 +7,8 @@
 // except according to those terms.
 use crate::errors::ParseError;
 use crate::tl::{Category, Definition};
-use crate::utils::remove_tl_comments;
 
-const DEFINITION_SEP: &str = ";";
+const DEFINITION_SEP: char = ';';
 const FUNCTIONS_SEP: &str = "---functions---";
 const TYPES_SEP: &str = "---types---";
 
@@ -23,9 +22,9 @@ pub struct TlIterator {
 }
 
 impl TlIterator {
-    pub(crate) fn new(contents: &str) -> Self {
+    pub(crate) fn new(contents: String) -> Self {
         TlIterator {
-            contents: remove_tl_comments(contents),
+            contents,
             index: 0,
             category: Category::Types,
         }
@@ -36,22 +35,32 @@ impl Iterator for TlIterator {
     type Item = Result<Definition, ParseError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let definition = loop {
+        let definition = {
             if self.index >= self.contents.len() {
                 return None;
             }
-            let end = if let Some(end) = self.contents[self.index..].find(DEFINITION_SEP) {
-                self.index + end
-            } else {
-                self.contents.len()
-            };
 
-            let definition = self.contents[self.index..end].trim();
-            self.index = end + DEFINITION_SEP.len();
+            let contents = &self.contents[self.index..];
+            let mut in_comment = false;
+            let mut end = contents.len();
 
-            if !definition.is_empty() {
-                break definition;
+            for (i, c) in contents.chars().enumerate() {
+                if contents[i..contents.len().min(i + 2)] == *"//" {
+                    in_comment = true;
+                } else if in_comment && c == '\n' {
+                    in_comment = false;
+                }
+
+                if !in_comment && c == DEFINITION_SEP {
+                    end = i;
+                    break;
+                }
             }
+
+            let definition = contents[..end].trim();
+            self.index = self.index + end + 1;
+
+            definition
         };
 
         // Get rid of the leading separator and adjust category
@@ -87,7 +96,7 @@ mod tests {
 
     #[test]
     fn parse_bad_separator() {
-        let mut it = TlIterator::new("---foo---");
+        let mut it = TlIterator::new("---foo---".into());
         assert_eq!(it.next(), Some(Err(ParseError::UnknownSeparator)));
         assert_eq!(it.next(), None);
     }
@@ -96,12 +105,12 @@ mod tests {
     fn parse_file() {
         let mut it = TlIterator::new(
             "
-            // leading; comment
+            //@description This is the first definition of the test
             first#1 = t; // inline comment
             second and bad;
             third#3 = t;
             // trailing comment
-        ",
+        ".into(),
         );
 
         assert_eq!(it.next().unwrap().unwrap().id, 1);

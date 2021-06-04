@@ -40,7 +40,7 @@ use tl_iterator::TlIterator;
 ///     let mut contents = String::new();
 ///     file.read_to_string(&mut contents)?;
 ///
-///     for definition in parse_tl_file(&contents) {
+///     for definition in parse_tl_file(contents) {
 ///         dbg!(definition);
 ///     }
 ///
@@ -49,6 +49,6 @@ use tl_iterator::TlIterator;
 /// ```
 ///
 /// [Type Language]: https://core.telegram.org/mtproto/TL
-pub fn parse_tl_file(contents: &str) -> impl Iterator<Item = Result<Definition, ParseError>> {
+pub fn parse_tl_file(contents: String) -> impl Iterator<Item = Result<Definition, ParseError>> {
     TlIterator::new(contents)
 }

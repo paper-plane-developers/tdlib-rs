@@ -61,6 +61,7 @@ fn write_struct<W: Write>(
     _metadata: &Metadata,
 ) -> io::Result<()> {
     // Define struct
+    writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
     writeln!(file, "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]", indent)?;
     write!(
         file,

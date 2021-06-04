@@ -71,6 +71,11 @@ fn rusty_type_name(name: &str) -> String {
     result
 }
 
+/// Get the rusty documentation from a string.
+fn rusty_doc(indent: &str, doc: &str) -> String {
+    format!("{}/// {}", indent, doc.replace("\n", &format!("\n{}/// ", indent)))
+}
+
 pub mod definitions {
     use super::*;
 
@@ -130,6 +135,10 @@ pub mod definitions {
     pub fn function_name(def: &Definition) -> String {
         let name = type_name(def);
         name.to_case(Case::Snake)
+    }
+
+    pub fn description(def: &Definition, indent: &str) -> String {
+        rusty_doc(indent, &def.description)
     }
 }
 
