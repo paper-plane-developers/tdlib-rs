@@ -38,7 +38,7 @@ fn write_enum<W: Write>(
         rustifier::types::type_name(ty)
     )?;
     for d in metadata.defs_with_type(ty) {
-        writeln!(file, "{}    #[serde(rename(deserialize = \"{}\"))]", indent, d.name)?;
+        writeln!(file, "{}    #[serde(rename(serialize = \"{1}\", deserialize = \"{1}\"))]", indent, d.name)?;
         write!(
             file,
             "{}    {}",
