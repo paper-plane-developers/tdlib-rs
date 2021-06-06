@@ -154,7 +154,7 @@ pub mod types {
             "int53" => "i64",
             "int64" => "String", // Tdlib handles int64 values as strings for some reason
             "string" => "String",
-            "vector" => "crate::RawVec",
+            "vector" => "Vec",
             _ => return None,
         })
     }
@@ -355,7 +355,7 @@ mod tests {
     fn check_type_raw_vec_qual_name() {
         let ty = "vector<long>".parse().unwrap();
         let name = types::qual_name(&ty);
-        assert_eq!(name, "crate::RawVec<i64>");
+        assert_eq!(name, "Vec<i64>");
     }
 
     #[test]

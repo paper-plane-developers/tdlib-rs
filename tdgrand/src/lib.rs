@@ -14,20 +14,11 @@ pub use generated::{functions, enums, types};
 
 use enums::Update;
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use uuid::Uuid;
 
 pub(crate) static OBSERVER: Lazy<observer::Observer> =
     Lazy::new(|| observer::Observer::new());
-
-/// This struct represents the concrete type of a vector, that is,
-/// `vector` as opposed to the type `Vector`. This bare type is less
-/// common, so instead of creating a enum for `Vector` wrapping `vector`
-/// as Rust's `Vec` (as we would do with auto-generated code),
-/// a new-type for `vector` is used instead.
-#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]
-pub struct RawVec<T>(pub Vec<T>);
 
 /// Create a TdLib client returning its id. Note that to start receiving
 /// updates for a client you need to send at least a request with it first.
