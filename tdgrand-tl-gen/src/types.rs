@@ -79,6 +79,9 @@ fn write_struct<W: Write>(
             }
             ParameterType::Normal { .. } => {
                 writeln!(file, "{}", rustifier::parameters::description(param, &format!("{}    ", indent)))?;
+                if let Some(serde_with) = rustifier::parameters::serde_with(param) {
+                    writeln!(file, "{}    #[serde(with = \"{}\")]", indent, serde_with)?;
+                }
                 write!(
                     file,
                     "{}    pub {}: ",

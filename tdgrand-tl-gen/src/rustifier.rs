@@ -152,7 +152,7 @@ pub mod types {
             "double" => "f64",
             "int32" => "i32",
             "int53" => "i64",
-            "int64" => "String", // Tdlib handles int64 values as strings for some reason
+            "int64" => "i64",
             "string" => "String",
             "vector" => "Vec",
             _ => return None,
@@ -246,6 +246,17 @@ pub mod parameters {
 
     pub fn description(param: &Parameter, indent: &str) -> String {
         rusty_doc(indent, &param.description)
+    }
+
+    pub fn serde_with(param: &Parameter) -> Option<String> {
+        if let ParameterType::Normal { ty, flag: _ } = &param.ty {
+            return Some(match ty.name.as_ref() {
+                "int64" => "serde_with::rust::display_fromstr".into(),
+                _ => return None,
+            })
+        }
+
+        None
     }
 }
 
