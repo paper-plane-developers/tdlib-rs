@@ -243,6 +243,10 @@ pub mod parameters {
             }
         }
     }
+
+    pub fn description(param: &Parameter, indent: &str) -> String {
+        rusty_doc(indent, &param.description)
+    }
 }
 
 #[cfg(test)]

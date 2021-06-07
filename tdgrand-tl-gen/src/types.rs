@@ -78,6 +78,7 @@ fn write_struct<W: Write>(
                 // Flags are computed on-the-fly, not stored
             }
             ParameterType::Normal { .. } => {
+                writeln!(file, "{}", rustifier::parameters::description(param, &format!("{}    ", indent)))?;
                 write!(
                     file,
                     "{}    pub {}: ",
