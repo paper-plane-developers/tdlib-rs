@@ -248,10 +248,10 @@ pub mod parameters {
         rusty_doc(indent, &param.description)
     }
 
-    pub fn serde_with(param: &Parameter) -> Option<String> {
+    pub fn serde_with(param: &Parameter) -> Option<&'static str> {
         if let ParameterType::Normal { ty, flag: _ } = &param.ty {
             return Some(match ty.name.as_ref() {
-                "int64" => "serde_with::rust::display_fromstr".into(),
+                "int64" => "serde_with::rust::display_fromstr",
                 _ => return None,
             })
         }
