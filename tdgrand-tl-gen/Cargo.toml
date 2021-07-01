@@ -5,5 +5,4 @@ authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-convert_case = "0.4"
 tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }

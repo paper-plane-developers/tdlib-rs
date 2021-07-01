@@ -46,47 +46,74 @@ fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
     result
 }
 
-/// Defines the `fn` corresponding to the definition:
+/// Defines the `struct` corresponding to the definition:
 ///
 /// ```ignore
-/// pub async fn Name(field: Type) {
-///     // Content
+/// pub struct Name {
+///     pub field: Option<Type>,
 /// }
 /// ```
-fn write_fn<W: Write>(
+fn write_struct<W: Write>(
     file: &mut W,
     indent: &str,
     def: &Definition,
     _metadata: &Metadata,
 ) -> io::Result<()> {
-    // Define function
+    // Define struct
     writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
-    write!(
+    writeln!(file, "{}#[derive(Default, Serialize)]", indent)?;
+    writeln!(
         file,
-        "{}pub async fn {}{}(client_id: i32",
+        "{}pub struct {}{} {{",
         indent,
-        rustifier::definitions::function_name(def),
+        rustifier::definitions::type_name(def),
         get_generic_param_list(def, true),
     )?;
+
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
                 // Flags are computed on-the-fly, not stored
             }
             ParameterType::Normal { .. } => {
-                write!(
+                writeln!(file, "{}", rustifier::parameters::description(param, &format!("{}    ", indent)))?;
+                writeln!(
                     file,
-                    ", {}: {}",
+                    "{}    pub {}: Option<{}>,",
+                    indent,
                     rustifier::parameters::attr_name(param),
                     rustifier::parameters::qual_name(param),
                 )?;
             }
         }
     }
-    writeln!(file, ") -> Result<{}, crate::types::Error> {{", rustifier::types::qual_name(&def.ty))?;
+    writeln!(file, "{}}}", indent)?;
+    Ok(())
+}
 
-    writeln!(file, "{}    let request = json!({{", indent)?;
-    writeln!(file, "{}        \"@type\": \"{}\",", indent, def.name)?;
+/// Defines the `impl` corresponding to the definition:
+///
+/// ```ignore
+/// impl Type {
+/// }
+/// ```
+fn write_impl<W: Write>(
+    file: &mut W,
+    indent: &str,
+    def: &Definition,
+    _metadata: &Metadata,
+) -> io::Result<()> {
+    writeln!(
+        file,
+        "{}impl {} {{",
+        indent,
+        rustifier::definitions::type_name(def),
+    )?;
+
+    writeln!(file, "{}    pub fn new() -> {} {{", indent, rustifier::definitions::type_name(def))?;
+    writeln!(file, "{}        Default::default()", indent)?;
+    writeln!(file, "{}    }}", indent)?;
+
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
@@ -95,19 +122,34 @@ fn write_fn<W: Write>(
             ParameterType::Normal { .. } => {
                 writeln!(
                     file,
-                    "{}        \"{1}\": {1},",
+                    "{}    pub fn {1}(mut self, {1}: {2}) -> {3} {{",
                     indent,
                     rustifier::parameters::attr_name(param),
+                    rustifier::parameters::qual_name(param),
+                    rustifier::definitions::type_name(def),
                 )?;
+                writeln!(file, "{}        self.{1} = Some({1});", indent, rustifier::parameters::attr_name(param))?;
+                writeln!(file, "{}        self", indent)?;
+                writeln!(file, "{}    }}", indent)?;
             }
         }
     }
-    writeln!(file, "{}    }});", indent)?;
-    writeln!(file, "{}    let response = send_request(client_id, request).await;", indent)?;
-    writeln!(file, "{}    if response[\"@type\"] == \"error\" {{", indent)?;
-    writeln!(file, "{}        return Err(serde_json::from_value(response).unwrap())", indent)?;
+
+    writeln!(
+        file,
+        "{}    pub async fn send(self, client_id: i32) -> Result<{}, crate::types::Error> {{",
+        indent,
+        rustifier::types::qual_name(&def.ty),
+    )?;
+    writeln!(file, "{}        let mut request = serde_json::to_value(self).unwrap();", indent)?;
+    writeln!(file, "{}        request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();", indent, def.name)?;
+    writeln!(file, "{}        let response = send_request(client_id, request).await;", indent)?;
+    writeln!(file, "{}        if response[\"@type\"] == \"error\" {{", indent)?;
+    writeln!(file, "{}            return Err(serde_json::from_value(response).unwrap())", indent)?;
+    writeln!(file, "{}        }}", indent)?;
+    writeln!(file, "{}        Ok(serde_json::from_value(response).unwrap())", indent)?;
     writeln!(file, "{}    }}", indent)?;
-    writeln!(file, "{}    Ok(serde_json::from_value(response).unwrap())", indent)?;
+
     writeln!(file, "{}}}", indent)?;
     Ok(())
 }
@@ -119,7 +161,8 @@ fn write_definition<W: Write>(
     def: &Definition,
     metadata: &Metadata,
 ) -> io::Result<()> {
-    write_fn(file, indent, def, metadata)?;
+    write_struct(file, indent, def, metadata)?;
+    write_impl(file, indent, def, metadata)?;
     Ok(())
 }
 
@@ -131,8 +174,8 @@ pub(crate) fn write_functions_mod<W: Write>(
 ) -> io::Result<()> {
     // Begin outermost mod
     writeln!(file, "pub mod functions {{")?;
+    writeln!(file, "    use serde::Serialize;")?;
     writeln!(file, "    use crate::send_request;")?;
-    writeln!(file, "    use serde_json::json;")?;
 
     let grouped = grouper::group_by_ns(definitions, Category::Functions);
     let mut sorted_keys: Vec<&String> = grouped.keys().collect();

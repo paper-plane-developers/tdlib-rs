@@ -63,7 +63,7 @@ fn write_struct<W: Write>(
     // Define struct
     writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
     writeln!(file, "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]", indent)?;
-    write!(
+    writeln!(
         file,
         "{}pub struct {}{} {{",
         indent,
@@ -71,7 +71,6 @@ fn write_struct<W: Write>(
         get_generic_param_list(def, true),
     )?;
 
-    writeln!(file)?;
     for param in def.params.iter() {
         match param.ty {
             ParameterType::Flags => {
