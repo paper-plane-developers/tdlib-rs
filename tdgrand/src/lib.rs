@@ -22,7 +22,7 @@ pub(crate) static OBSERVER: Lazy<observer::Observer> =
 
 /// Create a TdLib client returning its id. Note that to start receiving
 /// updates for a client you need to send at least a request with it first.
-pub fn crate_client() -> i32 {
+pub fn create_client() -> i32 {
     tdjson::create_client()
 }
 
