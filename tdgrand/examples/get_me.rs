@@ -99,7 +99,7 @@ async fn handle_authorization_state(client_id: i32, mut auth_rx: Receiver<Author
 #[tokio::main]
 async fn main() {
     // Create the client object
-    let client_id = tdgrand::crate_client();
+    let client_id = tdgrand::create_client();
 
     // Create a mpsc channel for handling AuthorizationState updates separately
     // from the task
