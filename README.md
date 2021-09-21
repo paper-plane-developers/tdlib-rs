@@ -1,6 +1,8 @@
-# tdgrand
+# TDGrand
 
-A WIP client for the Telegram Database library. It includes a generator to automatically generate the types and functions from the TDlib itself.
+A Rust wrapper around the Telegram Database Json library. It includes a generator to automatically generate the types and functions from the TDLib's [Type Language](https://core.telegram.org/mtproto/TL) file.
+
+It's mainly created for using it in the [Telegrand](https://github.com/melix99/telegrand) client, but it should work also for any other Rust project.
 
 ## Credits
 
