@@ -9,15 +9,15 @@
 
 //! This module gathers all the code generation submodules and coordinates
 //! them, feeding them the right data.
-mod functions;
 mod enums;
+mod functions;
 mod grouper;
 mod metadata;
 mod rustifier;
 mod types;
 
-use tdgrand_tl_parser::tl::{Definition, Type};
 use std::io::{self, Write};
+use tdgrand_tl_parser::tl::{Definition, Type};
 
 /// Don't generate types for definitions of this type,
 /// since they are "core" types and treated differently.
@@ -27,10 +27,7 @@ fn ignore_type(ty: &Type) -> bool {
     SPECIAL_CASED_TYPES.iter().any(|&x| x == ty.name)
 }
 
-pub fn generate_rust_code(
-    file: &mut impl Write,
-    definitions: &[Definition],
-) -> io::Result<()> {
+pub fn generate_rust_code(file: &mut impl Write, definitions: &[Definition]) -> io::Result<()> {
     write!(
         file,
         "\

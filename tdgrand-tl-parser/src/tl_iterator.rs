@@ -117,7 +117,8 @@ mod tests {
             second and bad;
             third#3 = t;
             // trailing comment
-        ".into(),
+        "
+            .into(),
         );
 
         assert_eq!(it.next().unwrap().unwrap().id, 1);

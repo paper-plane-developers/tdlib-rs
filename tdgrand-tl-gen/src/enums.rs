@@ -10,11 +10,11 @@
 //! Code to generate Rust's `enum`'s from TL definitions.
 
 use crate::grouper;
+use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
-use crate::ignore_type;
-use tdgrand_tl_parser::tl::{Definition, Type};
 use std::io::{self, Write};
+use tdgrand_tl_parser::tl::{Definition, Type};
 
 /// Writes an enumeration listing all types such as the following rust code:
 ///
@@ -29,7 +29,11 @@ fn write_enum<W: Write>(
     ty: &Type,
     metadata: &Metadata,
 ) -> io::Result<()> {
-    writeln!(file, "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]", indent)?;
+    writeln!(
+        file,
+        "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]",
+        indent
+    )?;
     writeln!(file, "{}#[serde(tag = \"@type\")]", indent)?;
     writeln!(
         file,
@@ -38,7 +42,11 @@ fn write_enum<W: Write>(
         rustifier::types::type_name(ty)
     )?;
     for d in metadata.defs_with_type(ty) {
-        writeln!(file, "{}    #[serde(rename(serialize = \"{1}\", deserialize = \"{1}\"))]", indent, d.name)?;
+        writeln!(
+            file,
+            "{}    #[serde(rename(serialize = \"{1}\", deserialize = \"{1}\"))]",
+            indent, d.name
+        )?;
         write!(
             file,
             "{}    {}",

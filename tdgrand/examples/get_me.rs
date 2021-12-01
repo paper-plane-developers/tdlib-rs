@@ -1,8 +1,11 @@
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc,
+};
 use tdgrand::{
     self,
-    functions,
     enums::{AuthorizationState, Update, User},
+    functions,
     types::TdlibParameters,
 };
 use tokio::sync::mpsc::{self, Receiver, Sender};
@@ -19,11 +22,15 @@ async fn handle_update(update: Update, auth_tx: &Sender<AuthorizationState>) {
         Update::AuthorizationState(update) => {
             auth_tx.send(update.authorization_state).await.unwrap();
         }
-        _ => ()
+        _ => (),
     }
 }
 
-async fn handle_authorization_state(client_id: i32, mut auth_rx: Receiver<AuthorizationState>, run_flag: Arc<AtomicBool>) -> Receiver<AuthorizationState> {
+async fn handle_authorization_state(
+    client_id: i32,
+    mut auth_rx: Receiver<AuthorizationState>,
+    run_flag: Arc<AtomicBool>,
+) -> Receiver<AuthorizationState> {
     while let Some(state) = auth_rx.recv().await {
         match state {
             AuthorizationState::WaitTdlibParameters => {
@@ -39,47 +46,46 @@ async fn handle_authorization_state(client_id: i32, mut auth_rx: Receiver<Author
 
                 let response = functions::SetTdlibParameters::new()
                     .parameters(parameters)
-                    .send(client_id).await;
+                    .send(client_id)
+                    .await;
                 if let Err(error) = response {
                     println!("{}", error.message);
                 }
             }
-            AuthorizationState::WaitEncryptionKey(_) => {
-                loop {
-                    let input = ask_user("Enter your encryption key (you can leave this empty if you want):");
-                    let response = functions::CheckDatabaseEncryptionKey::new()
-                        .encryption_key(input)
-                        .send(client_id).await;
-                    match response {
-                        Ok(_) => break,
-                        Err(e) => println!("{}", e.message),
-                    }
+            AuthorizationState::WaitEncryptionKey(_) => loop {
+                let input =
+                    ask_user("Enter your encryption key (you can leave this empty if you want):");
+                let response = functions::CheckDatabaseEncryptionKey::new()
+                    .encryption_key(input)
+                    .send(client_id)
+                    .await;
+                match response {
+                    Ok(_) => break,
+                    Err(e) => println!("{}", e.message),
                 }
-            }
-            AuthorizationState::WaitPhoneNumber => {
-                loop {
-                    let input = ask_user("Enter your phone number (include the country calling code):");
-                    let response = functions::SetAuthenticationPhoneNumber::new()
-                        .phone_number(input)
-                        .send(client_id).await;
-                    match response {
-                        Ok(_) => break,
-                        Err(e) => println!("{}", e.message),
-                    }
+            },
+            AuthorizationState::WaitPhoneNumber => loop {
+                let input = ask_user("Enter your phone number (include the country calling code):");
+                let response = functions::SetAuthenticationPhoneNumber::new()
+                    .phone_number(input)
+                    .send(client_id)
+                    .await;
+                match response {
+                    Ok(_) => break,
+                    Err(e) => println!("{}", e.message),
                 }
-            }
-            AuthorizationState::WaitCode(_) => {
-                loop {
-                    let input = ask_user("Enter the verification code:");
-                    let response = functions::CheckAuthenticationCode::new()
-                        .code(input)
-                        .send(client_id).await;
-                    match response {
-                        Ok(_) => break,
-                        Err(e) => println!("{}", e.message),
-                    }
+            },
+            AuthorizationState::WaitCode(_) => loop {
+                let input = ask_user("Enter the verification code:");
+                let response = functions::CheckAuthenticationCode::new()
+                    .code(input)
+                    .send(client_id)
+                    .await;
+                match response {
+                    Ok(_) => break,
+                    Err(e) => println!("{}", e.message),
                 }
-            }
+            },
             AuthorizationState::Ready => {
                 break;
             }
@@ -89,7 +95,7 @@ async fn handle_authorization_state(client_id: i32, mut auth_rx: Receiver<Author
                 run_flag.store(false, Ordering::Release);
                 break;
             }
-            _ => ()
+            _ => (),
         }
     }
 
@@ -123,7 +129,9 @@ async fn main() {
     // updates for it.
     functions::SetLogVerbosityLevel::new()
         .new_verbosity_level(2)
-        .send(client_id).await.unwrap();
+        .send(client_id)
+        .await
+        .unwrap();
 
     // Handle the authorization state to authenticate the client
     let auth_rx = handle_authorization_state(client_id, auth_rx, run_flag.clone()).await;
