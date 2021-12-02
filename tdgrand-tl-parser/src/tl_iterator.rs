@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -35,34 +36,49 @@ impl Iterator for TlIterator {
     type Item = Result<Definition, ParseError>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let (definition, has_separator) = {
+        let definition = loop {
             if self.index >= self.contents.len() {
                 return None;
             }
 
-            let contents = &self.contents[self.index..];
-            let mut in_comment = false;
-            let mut end = contents.len();
-            let mut has_separator = false;
+            let (end, is_empty) = {
+                let mut chars = self.contents[self.index..].char_indices().peekable();
+                let mut in_comment = false;
+                let mut is_empty = true;
 
-            for (i, c) in contents.chars().enumerate() {
-                if contents[i..contents.len().min(i + 2)] == *"//" {
-                    in_comment = true;
-                } else if in_comment && c == '\n' {
-                    in_comment = false;
-                }
+                loop {
+                    if let Some((i, c)) = chars.next() {
+                        if !in_comment && c == '/' {
+                            if let Some((_, pc)) = chars.peek() {
+                                if *pc == '/' {
+                                    in_comment = true;
+                                }
+                            }
+                        } else if in_comment && c == '\n' {
+                            in_comment = false;
+                        }
 
-                if !in_comment && c == DEFINITION_SEP {
-                    end = i;
-                    has_separator = true;
-                    break;
+                        if !in_comment {
+                            if !c.is_whitespace() {
+                                is_empty = false;
+                            }
+
+                            if c == DEFINITION_SEP {
+                                break (self.index + i, is_empty);
+                            }
+                        }
+                    } else {
+                        break (self.contents.len(), is_empty);
+                    }
                 }
+            };
+
+            let definition = self.contents[self.index..end].trim();
+            self.index = end + DEFINITION_SEP.len_utf8();
+
+            if !is_empty {
+                break definition;
             }
-
-            let definition = contents[..end].trim();
-            self.index = self.index + end + 1;
-
-            (definition, has_separator)
         };
 
         // Get rid of the leading separator and adjust category
@@ -77,11 +93,6 @@ impl Iterator for TlIterator {
                 return Some(Err(ParseError::UnknownSeparator));
             }
         } else {
-            // Return None if the definition has no separator
-            if !has_separator {
-                return None;
-            }
-
             definition
         };
 
@@ -112,12 +123,13 @@ mod tests {
     fn parse_file() {
         let mut it = TlIterator::new(
             "
-            //@description This is the first definition of the test
+            // leading; comment
             first#1 = t; // inline comment
             second and bad;
             third#3 = t;
             // trailing comment
-        ".into(),
+        "
+            .into(),
         );
 
         assert_eq!(it.next().unwrap().unwrap().id, 1);

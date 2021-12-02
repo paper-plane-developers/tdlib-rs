@@ -12,8 +12,8 @@
 use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
+use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 
 /// Get the list of generic parameters:
 ///
@@ -109,7 +109,12 @@ fn write_impl<W: Write>(
         rustifier::definitions::type_name(def),
     )?;
 
-    writeln!(file, "{}    pub fn new() -> {} {{", indent, rustifier::definitions::type_name(def))?;
+    writeln!(
+        file,
+        "{}    pub fn new() -> {} {{",
+        indent,
+        rustifier::definitions::type_name(def)
+    )?;
     writeln!(file, "{}        Default::default()", indent)?;
     writeln!(file, "{}    }}", indent)?;
 
@@ -119,7 +124,11 @@ fn write_impl<W: Write>(
                 // Flags are computed on-the-fly, not stored
             }
             ParameterType::Normal { .. } => {
-                writeln!(file, "{}", rustifier::parameters::description(param, &format!("{}    ", indent)))?;
+                writeln!(
+                    file,
+                    "{}",
+                    rustifier::parameters::description(param, &format!("{}    ", indent))
+                )?;
                 writeln!(
                     file,
                     "{}    pub fn {1}(mut self, {1}: {2}) -> {3} {{",
@@ -128,7 +137,12 @@ fn write_impl<W: Write>(
                     rustifier::parameters::qual_name(param),
                     rustifier::definitions::type_name(def),
                 )?;
-                writeln!(file, "{}        self.{1} = Some({1});", indent, rustifier::parameters::attr_name(param))?;
+                writeln!(
+                    file,
+                    "{}        self.{1} = Some({1});",
+                    indent,
+                    rustifier::parameters::attr_name(param)
+                )?;
                 writeln!(file, "{}        self", indent)?;
                 writeln!(file, "{}    }}", indent)?;
             }
@@ -141,13 +155,37 @@ fn write_impl<W: Write>(
         indent,
         rustifier::types::qual_name(&def.ty),
     )?;
-    writeln!(file, "{}        let mut request = serde_json::to_value(self).unwrap();", indent)?;
-    writeln!(file, "{}        request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();", indent, def.name)?;
-    writeln!(file, "{}        let response = send_request(client_id, request).await;", indent)?;
-    writeln!(file, "{}        if response[\"@type\"] == \"error\" {{", indent)?;
-    writeln!(file, "{}            return Err(serde_json::from_value(response).unwrap())", indent)?;
+    writeln!(
+        file,
+        "{}        let mut request = serde_json::to_value(self).unwrap();",
+        indent
+    )?;
+    writeln!(
+        file,
+        "{}        request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();",
+        indent, def.name
+    )?;
+    writeln!(
+        file,
+        "{}        let response = send_request(client_id, request).await;",
+        indent
+    )?;
+    writeln!(
+        file,
+        "{}        if response[\"@type\"] == \"error\" {{",
+        indent
+    )?;
+    writeln!(
+        file,
+        "{}            return Err(serde_json::from_value(response).unwrap())",
+        indent
+    )?;
     writeln!(file, "{}        }}", indent)?;
-    writeln!(file, "{}        Ok(serde_json::from_value(response).unwrap())", indent)?;
+    writeln!(
+        file,
+        "{}        Ok(serde_json::from_value(response).unwrap())",
+        indent
+    )?;
     writeln!(file, "{}    }}", indent)?;
 
     writeln!(file, "{}}}", indent)?;

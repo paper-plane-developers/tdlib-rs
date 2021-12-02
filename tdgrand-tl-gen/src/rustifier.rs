@@ -72,7 +72,11 @@ fn rusty_type_name(name: &str) -> String {
 
 /// Get the rusty documentation from a string.
 fn rusty_doc(indent: &str, doc: &str) -> String {
-    format!("{}/// {}", indent, doc.replace("\n", &format!("\n{}/// ", indent)))
+    format!(
+        "{}/// {}",
+        indent,
+        doc.replace("\n", &format!("\n{}/// ", indent))
+    )
 }
 
 pub mod definitions {
@@ -247,7 +251,7 @@ pub mod parameters {
             return Some(match ty.name.as_ref() {
                 "int64" => "serde_with::rust::display_fromstr",
                 _ => return None,
-            })
+            });
         }
 
         None

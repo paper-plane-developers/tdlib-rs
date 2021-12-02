@@ -10,11 +10,11 @@
 //! Code to generate Rust's `struct`'s from TL definitions.
 
 use crate::grouper;
+use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
-use crate::ignore_type;
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 use std::io::{self, Write};
+use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 
 /// Get the list of generic parameters:
 ///
@@ -62,7 +62,11 @@ fn write_struct<W: Write>(
 ) -> io::Result<()> {
     // Define struct
     writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
-    writeln!(file, "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]", indent)?;
+    writeln!(
+        file,
+        "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
+        indent
+    )?;
     writeln!(
         file,
         "{}pub struct {}{} {{",
@@ -77,7 +81,11 @@ fn write_struct<W: Write>(
                 // Flags are computed on-the-fly, not stored
             }
             ParameterType::Normal { .. } => {
-                writeln!(file, "{}", rustifier::parameters::description(param, &format!("{}    ", indent)))?;
+                writeln!(
+                    file,
+                    "{}",
+                    rustifier::parameters::description(param, &format!("{}    ", indent))
+                )?;
                 if let Some(serde_with) = rustifier::parameters::serde_with(param) {
                     writeln!(file, "{}    #[serde(with = \"{}\")]", indent, serde_with)?;
                 }
