@@ -31,8 +31,8 @@ pub fn create_client() -> i32 {
 /// at least a request with it first.
 pub fn receive() -> Option<(Update, i32)> {
     let response = tdjson::receive(2.0);
-    if let Some(response) = response {
-        let response: Value = serde_json::from_str(&response).unwrap();
+    if let Some(response_str) = response {
+        let response: Value = serde_json::from_str(&response_str).unwrap();
 
         match response["@extra"].as_str() {
             Some(_) => {
@@ -44,8 +44,12 @@ pub fn receive() -> Option<(Update, i32)> {
                     Ok(update) => {
                         return Some((update, client_id));
                     }
-                    Err(_) => {
-                        log::warn!("Got an unknown response");
+                    Err(e) => {
+                        log::warn!(
+                            "Received an unknown response: {}\nReason: {}",
+                            response_str,
+                            e
+                        );
                     }
                 }
             }
