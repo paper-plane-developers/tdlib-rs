@@ -9,8 +9,8 @@ log = "0.4"
 once_cell = "1.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_with = "1.10"
-tokio = { version = "1.12", features = ["sync"] }
+serde_with = "1.11"
+tokio = { version = "1.14", features = ["sync"] }
 uuid = { version = "0.8", features = ["v4"] }
 
 [build-dependencies]
@@ -18,4 +18,4 @@ tdgrand-tl-gen = { path = "../tdgrand-tl-gen", version = "0.1" }
 tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }
 
 [dev-dependencies]
-tokio = { version = "1.12", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.14", features = ["macros", "rt-multi-thread"] }
