@@ -5,4 +5,4 @@ authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-crc32fast = "1.2"
+crc32fast = "1.3"
