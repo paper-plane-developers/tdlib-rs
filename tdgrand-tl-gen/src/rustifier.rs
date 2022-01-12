@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -18,7 +18,7 @@
 //! * `item_path` for use as a qualified item path (`Vec::<u8>`).
 //! * `attr_name` for use as an attribute name (`foo_bar: ()`).
 
-use tdgrand_tl_parser::tl::{Definition, Parameter, ParameterType, Type};
+use tdgrand_tl_parser::tl::{Definition, Parameter, Type};
 
 /// Get the rusty type name for a certain definition, excluding namespace.
 ///
@@ -208,23 +208,7 @@ pub mod parameters {
     use super::*;
 
     pub fn qual_name(param: &Parameter) -> String {
-        match &param.ty {
-            ParameterType::Flags => "u32".into(),
-            ParameterType::Normal { ty, flag } if flag.is_some() && ty.name == "true" => {
-                "bool".into()
-            }
-            ParameterType::Normal { ty, flag } => {
-                let mut result = String::new();
-                if flag.is_some() {
-                    result.push_str("Option<");
-                }
-                result.push_str(&types::qual_name(ty));
-                if flag.is_some() {
-                    result.push('>');
-                }
-                result
-            }
-        }
+        types::qual_name(&param.ty)
     }
 
     pub fn attr_name(param: &Parameter) -> String {
@@ -247,14 +231,10 @@ pub mod parameters {
     }
 
     pub fn serde_with(param: &Parameter) -> Option<&'static str> {
-        if let ParameterType::Normal { ty, flag: _ } = &param.ty {
-            return Some(match ty.name.as_ref() {
-                "int64" => "serde_with::rust::display_fromstr",
-                _ => return None,
-            });
-        }
-
-        None
+        return Some(match param.ty.name.as_ref() {
+            "int64" => "serde_with::rust::display_fromstr",
+            _ => return None,
+        });
     }
 }
 
@@ -396,44 +376,9 @@ mod tests {
     }
 
     #[test]
-    fn check_param_flag_def_qual_name() {
-        let param = "flags:#".parse().unwrap();
-        let name = parameters::qual_name(&param);
-        assert_eq!(name, "u32");
-    }
-
-    #[test]
-    fn check_param_flags_qual_name() {
-        let param = "timeout:flags.1?int".parse().unwrap();
-        let name = parameters::qual_name(&param);
-        assert_eq!(name, "Option<i32>");
-    }
-
-    #[test]
-    fn check_param_true_flags_qual_name() {
-        let param = "big:flags.0?true".parse().unwrap();
-        let name = parameters::qual_name(&param);
-        assert_eq!(name, "bool");
-    }
-
-    #[test]
     fn check_param_attr_name() {
         let param = "access_hash:long".parse().unwrap();
         let name = parameters::attr_name(&param);
         assert_eq!(name, "access_hash");
-    }
-
-    #[test]
-    fn check_param_reserved_attr_name() {
-        let param = "final:flags.0?true".parse().unwrap();
-        let name = parameters::attr_name(&param);
-        assert_eq!(name, "r#final");
-    }
-
-    #[test]
-    fn check_param_self_attr_name() {
-        let param = "self:flags.0?true".parse().unwrap();
-        let name = parameters::attr_name(&param);
-        assert_eq!(name, "is_self");
     }
 }

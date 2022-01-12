@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,7 +8,7 @@
 // except according to those terms.
 use std::collections::{HashMap, HashSet};
 
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType, Type};
+use tdgrand_tl_parser::tl::{Category, Definition, Type};
 
 /// Additional metadata required by several parts of the generation.
 pub(crate) struct Metadata<'a> {
@@ -26,12 +27,10 @@ impl<'a> Metadata<'a> {
             .iter()
             .filter(|d| d.category == Category::Types)
             .for_each(|d| {
-                if d.params.iter().any(|p| match &p.ty {
-                    ParameterType::Flags => false,
-                    ParameterType::Normal { ty, .. } => {
-                        ty.namespace == d.ty.namespace && ty.name == d.ty.name
-                    }
-                }) {
+                if d.params
+                    .iter()
+                    .any(|p| p.ty.namespace == d.ty.namespace && p.ty.name == d.ty.name)
+                {
                     metadata.recursing_defs.insert(d.id);
                 }
 

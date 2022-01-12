@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -65,7 +65,7 @@ fn write_enum<W: Write>(
         if metadata.is_recursive_def(d) {
             write!(file, "Box<")?;
         }
-        write!(file, "{}", rustifier::definitions::qual_name(&d))?;
+        write!(file, "{}", rustifier::definitions::qual_name(d))?;
         if metadata.is_recursive_def(d) {
             write!(file, ">")?;
         }

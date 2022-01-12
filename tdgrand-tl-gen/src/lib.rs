@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -42,7 +42,7 @@ pub fn generate_rust_code(file: &mut impl Write, definitions: &[Definition]) -> 
          "
     )?;
 
-    let metadata = metadata::Metadata::new(&definitions);
+    let metadata = metadata::Metadata::new(definitions);
     types::write_types_mod(file, definitions, &metadata)?;
     enums::write_enums_mod(file, definitions, &metadata)?;
     functions::write_functions_mod(file, definitions, &metadata)?;

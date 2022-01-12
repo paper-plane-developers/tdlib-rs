@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -10,7 +11,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::errors::{ParamParseError, ParseError};
-use crate::tl::{Category, Flag, Parameter, ParameterType, Type};
+use crate::tl::{Category, Parameter, Type};
 use crate::utils::infer_id;
 
 /// A [Type Language] definition.
@@ -54,9 +55,7 @@ impl fmt::Display for Definition {
         // If any parameter references a generic, make sure to define it early
         let mut type_defs = vec![];
         for param in self.params.iter() {
-            if let ParameterType::Normal { ty, .. } = &param.ty {
-                ty.find_generic_refs(&mut type_defs);
-            }
+            param.ty.find_generic_refs(&mut type_defs);
         }
         type_defs.sort_unstable();
         type_defs.dedup();
@@ -170,14 +169,13 @@ impl FromStr for Definition {
 
         // Parse `description`
         let description = if let Some(description) = docs.remove("description") {
-            description.into()
+            description
         } else {
             String::new()
         };
 
         // Parse `middle`
         let mut type_defs = vec![];
-        let mut flag_defs = vec![];
 
         let params = middle
             .split_whitespace()
@@ -191,48 +189,17 @@ impl FromStr for Definition {
                         None
                     }
 
-                    // If the parameter is a flag definition save both
-                    // the definition and the parameter.
-                    Ok(Parameter {
-                        ref name,
-                        ty: ParameterType::Flags,
-                        ..
-                    }) => {
-                        flag_defs.push(name.clone());
-                        Some(Ok(p.unwrap()))
-                    }
-
                     // If the parameter type is a generic ref ensure it's valid.
                     Ok(Parameter {
                         ty:
-                            ParameterType::Normal {
-                                ty:
-                                    Type {
-                                        ref name,
-                                        generic_ref,
-                                        ..
-                                    },
+                            Type {
+                                ref name,
+                                generic_ref,
                                 ..
                             },
                         ..
                     }) if generic_ref => {
-                        if generic_ref && !type_defs.contains(&name) {
-                            Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
-                        } else {
-                            Some(Ok(p.unwrap()))
-                        }
-                    }
-
-                    // If the parameter type references a flag ensure it's valid
-                    Ok(Parameter {
-                        ty:
-                            ParameterType::Normal {
-                                flag: Some(Flag { ref name, .. }),
-                                ..
-                            },
-                        ..
-                    }) => {
-                        if !flag_defs.contains(&&name) {
+                        if generic_ref && !type_defs.contains(name) {
                             Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
                         } else {
                             Some(Ok(p.unwrap()))
@@ -249,17 +216,15 @@ impl FromStr for Definition {
                     Err(x) => Some(Err(ParseError::InvalidParam(x))),
                 };
 
-                if let Some(ref mut result) = result {
-                    if let Ok(param) = result {
-                        let name = if param.name == "description" {
-                            "param_description"
-                        } else {
-                            &param.name
-                        };
+                if let Some(Ok(ref mut param)) = result {
+                    let name = if param.name == "description" {
+                        "param_description"
+                    } else {
+                        &param.name
+                    };
 
-                        if let Some(description) = docs.remove(name) {
-                            param.description = description;
-                        }
+                    if let Some(description) = docs.remove(name) {
+                        param.description = description;
                     }
                 }
 
@@ -303,7 +268,6 @@ impl Definition {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tl::Flag;
 
     #[test]
     fn parse_empty_def() {
@@ -408,13 +372,7 @@ mod tests {
         assert_eq!(def.name, "a");
         assert_eq!(def.id, 1);
         assert_eq!(def.params.len(), 1);
-        assert!(match def.params[0].ty {
-            ParameterType::Normal {
-                ty: Type { generic_ref, .. },
-                ..
-            } if generic_ref => true,
-            _ => false,
-        });
+        assert!(def.params[0].ty.generic_ref);
         assert_eq!(
             def.ty,
             Type {
@@ -460,8 +418,7 @@ mod tests {
     fn parse_complete() {
         let def = "
             //@description This is a test description
-            //@flags This is a flags test description
-            ns1.name#123 {X:Type} flags:# pname:flags.10?ns2.Vector<!X> = ns3.Type";
+            ns1.name#123 {X:Type} pname:ns2.Vector<!X> = ns3.Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
@@ -469,36 +426,23 @@ mod tests {
                 name: "name".into(),
                 id: 0x123,
                 description: "This is a test description".into(),
-                params: vec![
-                    Parameter {
-                        name: "flags".into(),
-                        ty: ParameterType::Flags,
-                        description: "This is a flags test description".into(),
+                params: vec![Parameter {
+                    name: "pname".into(),
+                    ty: Type {
+                        namespace: vec!["ns2".into()],
+                        name: "Vector".into(),
+                        bare: false,
+                        generic_ref: false,
+                        generic_arg: Some(Box::new(Type {
+                            namespace: vec![],
+                            name: "X".into(),
+                            bare: false,
+                            generic_ref: true,
+                            generic_arg: None,
+                        })),
                     },
-                    Parameter {
-                        name: "pname".into(),
-                        ty: ParameterType::Normal {
-                            ty: Type {
-                                namespace: vec!["ns2".into()],
-                                name: "Vector".into(),
-                                bare: false,
-                                generic_ref: false,
-                                generic_arg: Some(Box::new(Type {
-                                    namespace: vec![],
-                                    name: "X".into(),
-                                    bare: false,
-                                    generic_ref: true,
-                                    generic_arg: None,
-                                })),
-                            },
-                            flag: Some(Flag {
-                                name: "flags".into(),
-                                index: 10
-                            })
-                        },
-                        description: String::new(),
-                    },
-                ],
+                    description: String::new(),
+                },],
                 ty: Type {
                     namespace: vec!["ns3".into()],
                     name: "Type".into(),
@@ -520,21 +464,6 @@ mod tests {
         );
 
         let def = "name {X:Type} param:!Y = Type";
-        assert_eq!(
-            Definition::from_str(def),
-            Err(ParseError::InvalidParam(ParamParseError::MissingDef))
-        );
-    }
-
-    #[test]
-    fn parse_unknown_flags() {
-        let def = "name param:flags.0?true = Type";
-        assert_eq!(
-            Definition::from_str(def),
-            Err(ParseError::InvalidParam(ParamParseError::MissingDef))
-        );
-
-        let def = "name foo:# param:flags.0?true = Type";
         assert_eq!(
             Definition::from_str(def),
             Err(ParseError::InvalidParam(ParamParseError::MissingDef))

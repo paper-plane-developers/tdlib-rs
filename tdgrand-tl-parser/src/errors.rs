@@ -46,9 +46,6 @@ pub enum ParamParseError {
     /// The parameter was empty.
     Empty,
 
-    /// The flag specification was invalid.
-    InvalidFlag,
-
     /// The generic argument was invalid.
     InvalidGeneric,
 

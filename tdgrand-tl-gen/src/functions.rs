@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -13,7 +13,7 @@ use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use std::io::{self, Write};
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
+use tdgrand_tl_parser::tl::{Category, Definition};
 
 /// Get the list of generic parameters:
 ///
@@ -23,20 +23,15 @@ use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
 fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
     let mut result = String::new();
     for param in def.params.iter() {
-        match param.ty {
-            ParameterType::Flags => {}
-            ParameterType::Normal { ref ty, .. } => {
-                if ty.generic_ref {
-                    if result.is_empty() {
-                        result.push('<');
-                    } else {
-                        result.push_str(", ");
-                    }
-                    result.push_str(&ty.name);
-                    if declaring {
-                        result.push_str(": crate::RemoteCall");
-                    }
-                }
+        if param.ty.generic_ref {
+            if result.is_empty() {
+                result.push('<');
+            } else {
+                result.push_str(", ");
+            }
+            result.push_str(&param.ty.name);
+            if declaring {
+                result.push_str(": crate::RemoteCall");
             }
         }
     }
@@ -71,20 +66,13 @@ fn write_struct<W: Write>(
     )?;
 
     for param in def.params.iter() {
-        match param.ty {
-            ParameterType::Flags => {
-                // Flags are computed on-the-fly, not stored
-            }
-            ParameterType::Normal { .. } => {
-                writeln!(
-                    file,
-                    "{}    {}: Option<{}>,",
-                    indent,
-                    rustifier::parameters::attr_name(param),
-                    rustifier::parameters::qual_name(param),
-                )?;
-            }
-        }
+        writeln!(
+            file,
+            "{}    {}: Option<{}>,",
+            indent,
+            rustifier::parameters::attr_name(param),
+            rustifier::parameters::qual_name(param),
+        )?;
     }
     writeln!(file, "{}}}", indent)?;
     Ok(())
@@ -119,34 +107,27 @@ fn write_impl<W: Write>(
     writeln!(file, "{}    }}", indent)?;
 
     for param in def.params.iter() {
-        match param.ty {
-            ParameterType::Flags => {
-                // Flags are computed on-the-fly, not stored
-            }
-            ParameterType::Normal { .. } => {
-                writeln!(
-                    file,
-                    "{}",
-                    rustifier::parameters::description(param, &format!("{}    ", indent))
-                )?;
-                writeln!(
-                    file,
-                    "{}    pub fn {1}(mut self, {1}: {2}) -> {3} {{",
-                    indent,
-                    rustifier::parameters::attr_name(param),
-                    rustifier::parameters::qual_name(param),
-                    rustifier::definitions::type_name(def),
-                )?;
-                writeln!(
-                    file,
-                    "{}        self.{1} = Some({1});",
-                    indent,
-                    rustifier::parameters::attr_name(param)
-                )?;
-                writeln!(file, "{}        self", indent)?;
-                writeln!(file, "{}    }}", indent)?;
-            }
-        }
+        writeln!(
+            file,
+            "{}",
+            rustifier::parameters::description(param, &format!("{}    ", indent))
+        )?;
+        writeln!(
+            file,
+            "{}    pub fn {1}(mut self, {1}: {2}) -> {3} {{",
+            indent,
+            rustifier::parameters::attr_name(param),
+            rustifier::parameters::qual_name(param),
+            rustifier::definitions::type_name(def),
+        )?;
+        writeln!(
+            file,
+            "{}        self.{1} = Some({1});",
+            indent,
+            rustifier::parameters::attr_name(param)
+        )?;
+        writeln!(file, "{}        self", indent)?;
+        writeln!(file, "{}    }}", indent)?;
     }
 
     writeln!(
