@@ -41,21 +41,9 @@ impl FromStr for Parameter {
     /// ```
     /// use tdgrand_tl_parser::tl::Parameter;
     ///
-    /// assert!("foo:flags.0?bar.Baz".parse::<Parameter>().is_ok());
+    /// assert!("foo:Bar".parse::<Parameter>().is_ok());
     /// ```
     fn from_str(param: &str) -> Result<Self, Self::Err> {
-        // Special case: parse `{X:Type}`
-        if param.starts_with('{') {
-            return Err(if param.ends_with(":Type}") {
-                ParamParseError::TypeDef {
-                    // Safe to unwrap because we know it contains ':'
-                    name: param[1..param.find(':').unwrap()].into(),
-                }
-            } else {
-                ParamParseError::MissingDef
-            });
-        };
-
         // Parse `name:type`
         let (name, ty) = {
             let mut it = param.split(':');
@@ -123,37 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_type_def_param() {
-        assert_eq!(
-            Parameter::from_str("{a:Type}"),
-            Err(ParamParseError::TypeDef { name: "a".into() })
-        );
-    }
-
-    #[test]
-    fn parse_unknown_def_param() {
-        assert_eq!(
-            Parameter::from_str("{a:foo}"),
-            Err(ParamParseError::MissingDef)
-        );
-    }
-
-    #[test]
     fn parse_valid_param() {
-        assert_eq!(
-            Parameter::from_str("foo:!bar"),
-            Ok(Parameter {
-                name: "foo".into(),
-                ty: Type {
-                    namespace: vec![],
-                    name: "bar".into(),
-                    bare: true,
-                    generic_ref: true,
-                    generic_arg: None,
-                },
-                description: String::new(),
-            })
-        );
         assert_eq!(
             Parameter::from_str("foo:bar<baz>"),
             Ok(Parameter {
@@ -162,7 +120,6 @@ mod tests {
                     namespace: vec![],
                     name: "bar".into(),
                     bare: true,
-                    generic_ref: false,
                     generic_arg: Some(Box::new("baz".parse().unwrap())),
                 },
                 description: String::new(),

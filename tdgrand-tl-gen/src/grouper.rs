@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -38,7 +39,7 @@ pub(crate) fn group_types_by_ns(definitions: &[Definition]) -> HashMap<Option<St
     let mut result = HashMap::new();
     definitions
         .iter()
-        .filter(|d| d.category == Category::Types && !d.ty.generic_ref)
+        .filter(|d| d.category == Category::Types)
         .for_each(|d| {
             // We currently only handle zero or one namespace.
             assert!(d.namespace.len() <= 1);

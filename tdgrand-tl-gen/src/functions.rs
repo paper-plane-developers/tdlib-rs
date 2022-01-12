@@ -15,32 +15,6 @@ use crate::rustifier;
 use std::io::{self, Write};
 use tdgrand_tl_parser::tl::{Category, Definition};
 
-/// Get the list of generic parameters:
-///
-/// ```ignore
-/// <X, Y>
-/// ```
-fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
-    let mut result = String::new();
-    for param in def.params.iter() {
-        if param.ty.generic_ref {
-            if result.is_empty() {
-                result.push('<');
-            } else {
-                result.push_str(", ");
-            }
-            result.push_str(&param.ty.name);
-            if declaring {
-                result.push_str(": crate::RemoteCall");
-            }
-        }
-    }
-    if !result.is_empty() {
-        result.push('>');
-    }
-    result
-}
-
 /// Defines the `struct` corresponding to the definition:
 ///
 /// ```ignore
@@ -59,10 +33,9 @@ fn write_struct<W: Write>(
     writeln!(file, "{}#[derive(Default, Serialize)]", indent)?;
     writeln!(
         file,
-        "{}pub struct {}{} {{",
+        "{}pub struct {} {{",
         indent,
         rustifier::definitions::type_name(def),
-        get_generic_param_list(def, true),
     )?;
 
     for param in def.params.iter() {

@@ -162,10 +162,6 @@ pub mod types {
     // 1. use `::<...>` instead of `<...>` to specify type arguments
     // 2. missing angle brackets in associated item path
     fn get_path(ty: &Type, path: bool) -> String {
-        if ty.generic_ref {
-            return ty.name.clone();
-        }
-
         let mut result = if let Some(name) = builtin_type(ty, path) {
             name.to_string()
         } else {
@@ -356,14 +352,6 @@ mod tests {
         let ty = "Vector<Bool>".parse().unwrap();
         let name = types::qual_name(&ty);
         assert_eq!(name, "Vec<bool>");
-    }
-
-    #[test]
-    fn check_type_generic_ref_qual_name() {
-        let mut ty: Type = "X".parse().unwrap();
-        ty.generic_ref = true;
-        let name = types::qual_name(&ty);
-        assert_eq!(name, "X");
     }
 
     // Parameter methods

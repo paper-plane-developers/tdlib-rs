@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -22,9 +23,6 @@ pub struct Type {
     /// Whether this type is bare or boxed.
     pub bare: bool,
 
-    /// Whether the type name refers to a generic definition.
-    pub generic_ref: bool,
-
     /// If the type has a generic argument, which is its type.
     pub generic_arg: Option<Box<Type>>,
 }
@@ -33,9 +31,6 @@ impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for ns in self.namespace.iter() {
             write!(f, "{}.", ns)?;
-        }
-        if self.generic_ref {
-            write!(f, "!")?;
         }
         write!(f, "{}", self.name)?;
         if let Some(generic_arg) = &self.generic_arg {
@@ -49,9 +44,6 @@ impl Type {
     /// Find all the nested generic references in this type, and appends them
     /// to the input vector.Box
     pub(crate) fn find_generic_refs<'a>(&'a self, output: &mut Vec<&'a str>) {
-        if self.generic_ref {
-            output.push(&self.name);
-        }
         if let Some(generic_arg) = &self.generic_arg {
             generic_arg.find_generic_refs(output);
         }
@@ -71,13 +63,6 @@ impl FromStr for Type {
     /// assert!("vector<int>".parse::<Type>().is_ok());
     /// ```
     fn from_str(ty: &str) -> Result<Self, Self::Err> {
-        // Parse `!type`
-        let (ty, generic_ref) = if let Some(ty) = ty.strip_prefix('!') {
-            (ty, true)
-        } else {
-            (ty, false)
-        };
-
         // Parse `type<generic_arg>`
         let (ty, generic_arg) = if let Some(pos) = ty.find('<') {
             if !ty.ends_with('>') {
@@ -107,7 +92,6 @@ impl FromStr for Type {
             namespace,
             name,
             bare,
-            generic_ref,
             generic_arg,
         })
     }
@@ -130,7 +114,6 @@ mod tests {
                 namespace: vec![],
                 name: "foo".into(),
                 bare: true,
-                generic_ref: false,
                 generic_arg: None,
             })
         );
@@ -154,7 +137,6 @@ mod tests {
                 namespace: vec!["foo".into(), "bar".into()],
                 name: "baz".into(),
                 bare: true,
-                generic_ref: false,
                 generic_arg: None,
             })
         );
@@ -182,42 +164,6 @@ mod tests {
             Ok(Type { bare: false, .. }) => true,
             _ => false,
         });
-        assert!(match Type::from_str("!bar") {
-            Ok(Type { bare: true, .. }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("!foo.Bar") {
-            Ok(Type { bare: false, .. }) => true,
-            _ => false,
-        });
-    }
-
-    #[test]
-    fn check_generic_ref() {
-        assert!(match Type::from_str("f") {
-            Ok(Type {
-                generic_ref: false, ..
-            }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("!f") {
-            Ok(Type {
-                generic_ref: true, ..
-            }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("!Foo") {
-            Ok(Type {
-                generic_ref: true, ..
-            }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("!X") {
-            Ok(Type {
-                generic_ref: true, ..
-            }) => true,
-            _ => false,
-        });
     }
 
     #[test]
@@ -240,13 +186,6 @@ mod tests {
                 generic_arg: Some(x),
                 ..
             }) => *x == "bar.Baz".parse().unwrap(),
-            _ => false,
-        });
-        assert!(match Type::from_str("foo<!bar.baz>") {
-            Ok(Type {
-                generic_arg: Some(x),
-                ..
-            }) => *x == "!bar.baz".parse().unwrap(),
             _ => false,
         });
         assert!(match Type::from_str("foo<bar<baz>>") {

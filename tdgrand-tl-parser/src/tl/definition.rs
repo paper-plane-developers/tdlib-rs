@@ -134,7 +134,7 @@ impl FromStr for Definition {
             }
         };
 
-        let mut ty = Type::from_str(ty).map_err(|_| ParseError::MissingType)?;
+        let ty = Type::from_str(ty).map_err(|_| ParseError::MissingType)?;
 
         // Parse `name middle`
         let (name, middle) = {
@@ -175,38 +175,12 @@ impl FromStr for Definition {
         };
 
         // Parse `middle`
-        let mut type_defs = vec![];
-
         let params = middle
             .split_whitespace()
             .map(Parameter::from_str)
             .filter_map(|p| {
                 let mut result = match p {
-                    // If the parameter is a type definition save it
-                    // and ignore this parameter.
-                    Err(ParamParseError::TypeDef { name }) => {
-                        type_defs.push(name);
-                        None
-                    }
-
-                    // If the parameter type is a generic ref ensure it's valid.
-                    Ok(Parameter {
-                        ty:
-                            Type {
-                                ref name,
-                                generic_ref,
-                                ..
-                            },
-                        ..
-                    }) if generic_ref => {
-                        if generic_ref && !type_defs.contains(name) {
-                            Some(Err(ParseError::InvalidParam(ParamParseError::MissingDef)))
-                        } else {
-                            Some(Ok(p.unwrap()))
-                        }
-                    }
-
-                    // Any other parameter that's okay should just be passed as-is.
+                    // Any parameter that's okay should just be passed as-is.
                     Ok(p) => Some(Ok(p)),
 
                     // Unimplenented parameters are unimplemented definitions.
@@ -231,12 +205,6 @@ impl FromStr for Definition {
                 result
             })
             .collect::<Result<_, ParseError>>()?;
-
-        // The type lacks `!` so we determine if it's a generic one based
-        // on whether its name is known in a previous parameter type def.
-        if type_defs.contains(&ty.name) {
-            ty.generic_ref = true;
-        }
 
         Ok(Definition {
             namespace,
@@ -333,7 +301,6 @@ mod tests {
                 namespace: vec![],
                 name: "d".into(),
                 bare: true,
-                generic_ref: false,
                 generic_arg: None,
             }
         );
@@ -348,7 +315,6 @@ mod tests {
                 namespace: vec![],
                 name: "d".into(),
                 bare: true,
-                generic_ref: false,
                 generic_arg: Some(Box::new("e".parse().unwrap())),
             }
         );
@@ -363,23 +329,6 @@ mod tests {
                 namespace: vec![],
                 name: "d".into(),
                 bare: true,
-                generic_ref: false,
-                generic_arg: None,
-            }
-        );
-
-        let def = Definition::from_str("a#1 {b:Type} c:!b = d").unwrap();
-        assert_eq!(def.name, "a");
-        assert_eq!(def.id, 1);
-        assert_eq!(def.params.len(), 1);
-        assert!(def.params[0].ty.generic_ref);
-        assert_eq!(
-            def.ty,
-            Type {
-                namespace: vec![],
-                name: "d".into(),
-                bare: true,
-                generic_ref: false,
                 generic_arg: None,
             }
         );
@@ -418,7 +367,7 @@ mod tests {
     fn parse_complete() {
         let def = "
             //@description This is a test description
-            ns1.name#123 {X:Type} pname:ns2.Vector<!X> = ns3.Type";
+            ns1.name#123 pname:ns2.Vector<X> = ns3.Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
@@ -432,12 +381,10 @@ mod tests {
                         namespace: vec!["ns2".into()],
                         name: "Vector".into(),
                         bare: false,
-                        generic_ref: false,
                         generic_arg: Some(Box::new(Type {
                             namespace: vec![],
                             name: "X".into(),
                             bare: false,
-                            generic_ref: true,
                             generic_arg: None,
                         })),
                     },
@@ -447,7 +394,6 @@ mod tests {
                     namespace: vec!["ns3".into()],
                     name: "Type".into(),
                     bare: false,
-                    generic_ref: false,
                     generic_arg: None,
                 },
                 category: Category::Types,
@@ -456,23 +402,8 @@ mod tests {
     }
 
     #[test]
-    fn parse_missing_generic() {
-        let def = "name param:!X = Type";
-        assert_eq!(
-            Definition::from_str(def),
-            Err(ParseError::InvalidParam(ParamParseError::MissingDef))
-        );
-
-        let def = "name {X:Type} param:!Y = Type";
-        assert_eq!(
-            Definition::from_str(def),
-            Err(ParseError::InvalidParam(ParamParseError::MissingDef))
-        );
-    }
-
-    #[test]
     fn test_to_string() {
-        let def = "ns1.name#123 {X:Type} flags:# pname:flags.10?ns2.Vector<!X> = ns3.Type";
+        let def = "ns1.name#123 pname:Vector<X> = ns3.Type";
         assert_eq!(Definition::from_str(def).unwrap().to_string(), def);
     }
 }
