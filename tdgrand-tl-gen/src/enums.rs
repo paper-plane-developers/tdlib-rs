@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -9,12 +9,11 @@
 
 //! Code to generate Rust's `enum`'s from TL definitions.
 
-use crate::grouper;
 use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use std::io::{self, Write};
-use tdgrand_tl_parser::tl::{Definition, Type};
+use tdgrand_tl_parser::tl::{Category, Definition, Type};
 
 /// Writes an enumeration listing all types such as the following rust code:
 ///
@@ -23,36 +22,20 @@ use tdgrand_tl_parser::tl::{Definition, Type};
 ///     Variant(crate::types::Name),
 /// }
 /// ```
-fn write_enum<W: Write>(
-    file: &mut W,
-    indent: &str,
-    ty: &Type,
-    metadata: &Metadata,
-) -> io::Result<()> {
+fn write_enum<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
     writeln!(
         file,
-        "{}#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]",
-        indent
+        "    #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]",
     )?;
-    writeln!(file, "{}#[serde(tag = \"@type\")]", indent)?;
-    writeln!(
-        file,
-        "{}pub enum {} {{",
-        indent,
-        rustifier::types::type_name(ty)
-    )?;
+    writeln!(file, "    #[serde(tag = \"@type\")]")?;
+    writeln!(file, "    pub enum {} {{", rustifier::types::type_name(ty))?;
     for d in metadata.defs_with_type(ty) {
         writeln!(
             file,
-            "{}    #[serde(rename(serialize = \"{1}\", deserialize = \"{1}\"))]",
-            indent, d.name
+            "        #[serde(rename(serialize = \"{0}\", deserialize = \"{0}\"))]",
+            d.name
         )?;
-        write!(
-            file,
-            "{}    {}",
-            indent,
-            rustifier::definitions::variant_name(d)
-        )?;
+        write!(file, "        {}", rustifier::definitions::variant_name(d))?;
 
         // Variant with no struct since it has no data and it only adds noise
         if d.params.is_empty() {
@@ -65,14 +48,14 @@ fn write_enum<W: Write>(
         if metadata.is_recursive_def(d) {
             write!(file, "Box<")?;
         }
-        write!(file, "{}", rustifier::definitions::qual_name(&d))?;
+        write!(file, "{}", rustifier::definitions::qual_name(d))?;
         if metadata.is_recursive_def(d) {
             write!(file, ">")?;
         }
 
         writeln!(file, "),")?;
     }
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
@@ -82,24 +65,17 @@ fn write_enum<W: Write>(
 /// impl Default for Enum {
 /// }
 /// ```
-fn write_impl_default<W: Write>(
-    file: &mut W,
-    indent: &str,
-    ty: &Type,
-    metadata: &Metadata,
-) -> io::Result<()> {
+fn write_impl_default<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
     writeln!(
         file,
-        "{}impl Default for {} {{",
-        indent,
+        "    impl Default for {} {{",
         rustifier::types::type_name(ty),
     )?;
 
     let def = metadata.defs_with_type(ty)[0];
     write!(
         file,
-        "{}    fn default() -> Self {{ {}::{}",
-        indent,
+        "        fn default() -> Self {{ {}::{}",
         rustifier::types::type_name(ty),
         rustifier::definitions::variant_name(def),
     )?;
@@ -108,19 +84,14 @@ fn write_impl_default<W: Write>(
     }
     writeln!(file, " }}")?;
 
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
 /// Writes an entire definition as Rust code (`enum` and `impl`).
-fn write_definition<W: Write>(
-    file: &mut W,
-    indent: &str,
-    ty: &Type,
-    metadata: &Metadata,
-) -> io::Result<()> {
-    write_enum(file, indent, ty, metadata)?;
-    write_impl_default(file, indent, ty, metadata)?;
+fn write_definition<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
+    write_enum(file, ty, metadata)?;
+    write_impl_default(file, ty, metadata)?;
     Ok(())
 }
 
@@ -134,26 +105,15 @@ pub(crate) fn write_enums_mod<W: Write>(
     writeln!(file, "pub mod enums {{")?;
     writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
 
-    let grouped = grouper::group_types_by_ns(definitions);
-    let mut sorted_keys: Vec<&Option<String>> = grouped.keys().collect();
-    sorted_keys.sort();
-    for key in sorted_keys.into_iter() {
-        // Begin possibly inner mod
-        let indent = if let Some(ns) = key {
-            writeln!(file, "    pub mod {} {{", ns)?;
-            "        "
-        } else {
-            "    "
-        };
+    let mut enums: Vec<&Type> = definitions
+        .iter()
+        .filter(|d| d.category == Category::Types && !ignore_type(&d.ty))
+        .map(|d| &d.ty)
+        .collect();
+    enums.dedup();
 
-        for ty in grouped[key].iter().filter(|ty| !ignore_type(*ty)) {
-            write_definition(&mut file, indent, ty, metadata)?;
-        }
-
-        // End possibly inner mod
-        if key.is_some() {
-            writeln!(file, "    }}")?;
-        }
+    for ty in enums {
+        write_definition(&mut file, ty, metadata)?;
     }
 
     // End outermost mod

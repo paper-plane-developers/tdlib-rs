@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -9,7 +10,6 @@
 //! Errors that can occur during the parsing of [Type Language] definitions.
 //!
 //! [Type Language]: https://core.telegram.org/mtproto/TL
-use std::num::ParseIntError;
 
 /// The error type for the parsing operation of [`Definition`]s.
 ///
@@ -18,9 +18,6 @@ use std::num::ParseIntError;
 pub enum ParseError {
     /// The definition is empty.
     Empty,
-
-    /// The identifier from this definition is invalid.
-    InvalidId(ParseIntError),
 
     /// One of the parameters from this definition was invalid.
     InvalidParam(ParamParseError),
@@ -46,18 +43,8 @@ pub enum ParamParseError {
     /// The parameter was empty.
     Empty,
 
-    /// The flag specification was invalid.
-    InvalidFlag,
-
     /// The generic argument was invalid.
     InvalidGeneric,
-
-    /// The parameter is actually a generic type definition for later
-    /// use, such as `{X:Type}`, but it is not a parameter in itself.
-    TypeDef { name: String },
-
-    /// The parameter refers to some unknown definition.
-    MissingDef,
 
     /// The parser does not know how to parse the parameter.
     NotImplemented,

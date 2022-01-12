@@ -124,17 +124,17 @@ mod tests {
         let mut it = TlIterator::new(
             "
             // leading; comment
-            first#1 = t; // inline comment
+            first = t; // inline comment
             second and bad;
-            third#3 = t;
+            third = t;
             // trailing comment
         "
             .into(),
         );
 
-        assert_eq!(it.next().unwrap().unwrap().id, 1);
+        assert_eq!(it.next().unwrap().unwrap().name, "first");
         assert!(it.next().unwrap().is_err());
-        assert_eq!(it.next().unwrap().unwrap().id, 3);
+        assert_eq!(it.next().unwrap().unwrap().name, "third");
         assert_eq!(it.next(), None);
     }
 }

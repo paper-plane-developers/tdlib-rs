@@ -1,5 +1,5 @@
-// Copyright 2021 - developers of the `tdgrand` project.
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2021 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -9,43 +9,11 @@
 
 //! Code to generate Rust's `struct`'s from TL definitions.
 
-use crate::grouper;
 use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use std::io::{self, Write};
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType};
-
-/// Get the list of generic parameters:
-///
-/// ```ignore
-/// <X, Y>
-/// ```
-fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
-    let mut result = String::new();
-    for param in def.params.iter() {
-        match param.ty {
-            ParameterType::Flags => {}
-            ParameterType::Normal { ref ty, .. } => {
-                if ty.generic_ref {
-                    if result.is_empty() {
-                        result.push('<');
-                    } else {
-                        result.push_str(", ");
-                    }
-                    result.push_str(&ty.name);
-                    if declaring {
-                        result.push_str(": crate::RemoteCall");
-                    }
-                }
-            }
-        }
-    }
-    if !result.is_empty() {
-        result.push('>');
-    }
-    result
-}
+use tdgrand_tl_parser::tl::{Category, Definition};
 
 /// Defines the `struct` corresponding to the definition:
 ///
@@ -54,72 +22,55 @@ fn get_generic_param_list(def: &Definition, declaring: bool) -> String {
 ///     pub field: Type,
 /// }
 /// ```
-fn write_struct<W: Write>(
-    file: &mut W,
-    indent: &str,
-    def: &Definition,
-    _metadata: &Metadata,
-) -> io::Result<()> {
+fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     // Define struct
-    writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
+    writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
     writeln!(
         file,
-        "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
-        indent
+        "    #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
     )?;
     writeln!(
         file,
-        "{}pub struct {}{} {{",
-        indent,
+        "    pub struct {} {{",
         rustifier::definitions::type_name(def),
-        get_generic_param_list(def, true),
     )?;
 
     for param in def.params.iter() {
-        match param.ty {
-            ParameterType::Flags => {
-                // Flags are computed on-the-fly, not stored
-            }
-            ParameterType::Normal { .. } => {
-                writeln!(
-                    file,
-                    "{}",
-                    rustifier::parameters::description(param, &format!("{}    ", indent))
-                )?;
-                if let Some(serde_with) = rustifier::parameters::serde_with(param) {
-                    writeln!(file, "{}    #[serde(with = \"{}\")]", indent, serde_with)?;
-                }
-                write!(
-                    file,
-                    "{}    pub {}: ",
-                    indent,
-                    rustifier::parameters::attr_name(param),
-                )?;
-
-                let is_optional = param.description.contains("may be null");
-                if is_optional {
-                    write!(file, "Option<")?;
-                }
-                write!(file, "{}", rustifier::parameters::qual_name(param))?;
-                if is_optional {
-                    write!(file, ">")?;
-                }
-                writeln!(file, ",")?;
-            }
+        writeln!(
+            file,
+            "{}",
+            rustifier::parameters::description(param, "        ")
+        )?;
+        if let Some(serde_with) = rustifier::parameters::serde_with(param) {
+            writeln!(file, "        #[serde(with = \"{}\")]", serde_with)?;
         }
+        write!(
+            file,
+            "        pub {}: ",
+            rustifier::parameters::attr_name(param),
+        )?;
+
+        let is_optional = param.description.contains("may be null");
+        if is_optional {
+            write!(file, "Option<")?;
+        }
+        write!(file, "{}", rustifier::parameters::qual_name(param))?;
+        if is_optional {
+            write!(file, ">")?;
+        }
+        writeln!(file, ",")?;
     }
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
 /// Writes an entire definition as Rust code (`struct`).
 fn write_definition<W: Write>(
     file: &mut W,
-    indent: &str,
     def: &Definition,
     metadata: &Metadata,
 ) -> io::Result<()> {
-    write_struct(file, indent, def, metadata)?;
+    write_struct(file, def, metadata)?;
     Ok(())
 }
 
@@ -133,29 +84,12 @@ pub(crate) fn write_types_mod<W: Write>(
     writeln!(file, "pub mod types {{")?;
     writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
 
-    let grouped = grouper::group_by_ns(definitions, Category::Types);
-    let mut sorted_keys: Vec<&String> = grouped.keys().collect();
-    sorted_keys.sort();
-    for key in sorted_keys.into_iter() {
-        // Begin possibly inner mod
-        let indent = if key.is_empty() {
-            "    "
-        } else {
-            writeln!(file, "    pub mod {} {{", key)?;
-            "        "
-        };
+    let types = definitions
+        .iter()
+        .filter(|d| d.category == Category::Types && !ignore_type(&d.ty) && !d.params.is_empty());
 
-        for definition in grouped[key]
-            .iter()
-            .filter(|def| !def.params.is_empty() && !ignore_type(&def.ty))
-        {
-            write_definition(&mut file, indent, definition, metadata)?;
-        }
-
-        // End possibly inner mod
-        if !key.is_empty() {
-            writeln!(file, "    }}")?;
-        }
+    for definition in types {
+        write_definition(&mut file, definition, metadata)?;
     }
 
     // End outermost mod

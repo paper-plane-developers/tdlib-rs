@@ -3,6 +3,3 @@ name = "tdgrand-tl-parser"
 version = "0.1.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
-
-[dependencies]
-crc32fast = "1.3"

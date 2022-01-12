@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -7,12 +8,12 @@
 // except according to those terms.
 use std::collections::{HashMap, HashSet};
 
-use tdgrand_tl_parser::tl::{Category, Definition, ParameterType, Type};
+use tdgrand_tl_parser::tl::{Category, Definition, Type};
 
 /// Additional metadata required by several parts of the generation.
 pub(crate) struct Metadata<'a> {
-    recursing_defs: HashSet<u32>,
-    defs_with_type: HashMap<(&'a Vec<String>, &'a String), Vec<&'a Definition>>,
+    recursing_defs: HashSet<&'a String>,
+    defs_with_type: HashMap<&'a String, Vec<&'a Definition>>,
 }
 
 impl<'a> Metadata<'a> {
@@ -26,18 +27,13 @@ impl<'a> Metadata<'a> {
             .iter()
             .filter(|d| d.category == Category::Types)
             .for_each(|d| {
-                if d.params.iter().any(|p| match &p.ty {
-                    ParameterType::Flags => false,
-                    ParameterType::Normal { ty, .. } => {
-                        ty.namespace == d.ty.namespace && ty.name == d.ty.name
-                    }
-                }) {
-                    metadata.recursing_defs.insert(d.id);
+                if d.params.iter().any(|p| p.ty.name == d.ty.name) {
+                    metadata.recursing_defs.insert(&d.name);
                 }
 
                 metadata
                     .defs_with_type
-                    .entry((&d.ty.namespace, &d.ty.name))
+                    .entry(&d.ty.name)
                     .or_insert_with(Vec::new)
                     .push(d);
             });
@@ -48,10 +44,10 @@ impl<'a> Metadata<'a> {
     /// Returns `true` if any of the parameters of `Definition` are of the
     /// same type as the `Definition` itself (meaning it recurses).
     pub fn is_recursive_def(&self, def: &Definition) -> bool {
-        self.recursing_defs.contains(&def.id)
+        self.recursing_defs.contains(&def.name)
     }
 
     pub fn defs_with_type(&self, ty: &'a Type) -> &Vec<&Definition> {
-        &self.defs_with_type[&(&ty.namespace, &ty.name)]
+        &self.defs_with_type[&ty.name]
     }
 }

@@ -1,4 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
+// Copyright 2022 - developers of the `tdgrand` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -9,7 +10,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use crate::errors::ParamParseError;
-use crate::tl::ParameterType;
+use crate::tl::Type;
 
 /// A single parameter, with a name and a type.
 #[derive(Debug, PartialEq)]
@@ -18,7 +19,7 @@ pub struct Parameter {
     pub name: String,
 
     /// The type of the parameter.
-    pub ty: ParameterType,
+    pub ty: Type,
 
     /// The description of the parameter.
     pub description: String,
@@ -40,21 +41,9 @@ impl FromStr for Parameter {
     /// ```
     /// use tdgrand_tl_parser::tl::Parameter;
     ///
-    /// assert!("foo:flags.0?bar.Baz".parse::<Parameter>().is_ok());
+    /// assert!("foo:Bar".parse::<Parameter>().is_ok());
     /// ```
     fn from_str(param: &str) -> Result<Self, Self::Err> {
-        // Special case: parse `{X:Type}`
-        if param.starts_with('{') {
-            return Err(if param.ends_with(":Type}") {
-                ParamParseError::TypeDef {
-                    // Safe to unwrap because we know it contains ':'
-                    name: param[1..param.find(':').unwrap()].into(),
-                }
-            } else {
-                ParamParseError::MissingDef
-            });
-        };
-
         // Parse `name:type`
         let (name, ty) = {
             let mut it = param.split(':');
@@ -84,7 +73,7 @@ impl FromStr for Parameter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tl::{Flag, Type};
+    use crate::tl::Type;
 
     #[test]
     fn parse_empty_param() {
@@ -110,26 +99,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_bad_flags() {
-        assert_eq!(
-            Parameter::from_str("foo:bar?"),
-            Err(ParamParseError::InvalidFlag)
-        );
-        assert_eq!(
-            Parameter::from_str("foo:?bar"),
-            Err(ParamParseError::InvalidFlag)
-        );
-        assert_eq!(
-            Parameter::from_str("foo:bar?baz"),
-            Err(ParamParseError::InvalidFlag)
-        );
-        assert_eq!(
-            Parameter::from_str("foo:bar.baz?qux"),
-            Err(ParamParseError::InvalidFlag)
-        );
-    }
-
-    #[test]
     fn parse_bad_generics() {
         assert_eq!(
             Parameter::from_str("foo:<bar"),
@@ -142,101 +111,15 @@ mod tests {
     }
 
     #[test]
-    fn parse_type_def_param() {
-        assert_eq!(
-            Parameter::from_str("{a:Type}"),
-            Err(ParamParseError::TypeDef { name: "a".into() })
-        );
-    }
-
-    #[test]
-    fn parse_unknown_def_param() {
-        assert_eq!(
-            Parameter::from_str("{a:foo}"),
-            Err(ParamParseError::MissingDef)
-        );
-    }
-
-    #[test]
     fn parse_valid_param() {
-        assert_eq!(
-            Parameter::from_str("foo:#"),
-            Ok(Parameter {
-                name: "foo".into(),
-                ty: ParameterType::Flags,
-                description: String::new(),
-            })
-        );
-        assert_eq!(
-            Parameter::from_str("foo:!bar"),
-            Ok(Parameter {
-                name: "foo".into(),
-                ty: ParameterType::Normal {
-                    ty: Type {
-                        namespace: vec![],
-                        name: "bar".into(),
-                        bare: true,
-                        generic_ref: true,
-                        generic_arg: None,
-                    },
-                    flag: None,
-                },
-                description: String::new(),
-            })
-        );
-        assert_eq!(
-            Parameter::from_str("foo:bar.1?baz"),
-            Ok(Parameter {
-                name: "foo".into(),
-                ty: ParameterType::Normal {
-                    ty: Type {
-                        namespace: vec![],
-                        name: "baz".into(),
-                        bare: true,
-                        generic_ref: false,
-                        generic_arg: None,
-                    },
-                    flag: Some(Flag {
-                        name: "bar".into(),
-                        index: 1,
-                    }),
-                },
-                description: String::new(),
-            })
-        );
         assert_eq!(
             Parameter::from_str("foo:bar<baz>"),
             Ok(Parameter {
                 name: "foo".into(),
-                ty: ParameterType::Normal {
-                    ty: Type {
-                        namespace: vec![],
-                        name: "bar".into(),
-                        bare: true,
-                        generic_ref: false,
-                        generic_arg: Some(Box::new("baz".parse().unwrap())),
-                    },
-                    flag: None,
-                },
-                description: String::new(),
-            })
-        );
-        assert_eq!(
-            Parameter::from_str("foo:bar.1?baz<qux>"),
-            Ok(Parameter {
-                name: "foo".into(),
-                ty: ParameterType::Normal {
-                    ty: Type {
-                        namespace: vec![],
-                        name: "baz".into(),
-                        bare: true,
-                        generic_ref: false,
-                        generic_arg: Some(Box::new("qux".parse().unwrap())),
-                    },
-                    flag: Some(Flag {
-                        name: "bar".into(),
-                        index: 1,
-                    }),
+                ty: Type {
+                    name: "bar".into(),
+                    bare: true,
+                    generic_arg: Some(Box::new("baz".parse().unwrap())),
                 },
                 description: String::new(),
             })
