@@ -86,6 +86,21 @@ pub mod definitions {
         rusty_type_name(&def.name)
     }
 
+    pub fn function_name(def: &Definition) -> String {
+        let mut result = String::with_capacity(def.name.len());
+
+        def.name.chars().for_each(|c| {
+            if c.is_ascii_uppercase() {
+                result.push('_');
+                result.push(c.to_ascii_lowercase());
+            } else {
+                result.push(c);
+            }
+        });
+
+        result
+    }
+
     pub fn qual_name(def: &Definition) -> String {
         let mut result = String::new();
         result.push_str("crate::types::");
@@ -212,6 +227,10 @@ pub mod parameters {
                 result
             }
         }
+    }
+
+    pub fn is_optional(param: &Parameter) -> bool {
+        param.description.contains("; may be null") || param.description.contains("; pass null")
     }
 
     pub fn description(param: &Parameter, indent: &str) -> String {

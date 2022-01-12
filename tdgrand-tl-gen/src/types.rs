@@ -50,7 +50,7 @@ fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) 
             rustifier::parameters::attr_name(param),
         )?;
 
-        let is_optional = param.description.contains("may be null");
+        let is_optional = rustifier::parameters::is_optional(param);
         if is_optional {
             write!(file, "Option<")?;
         }
