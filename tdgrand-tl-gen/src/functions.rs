@@ -9,7 +9,6 @@
 
 //! Code to generate Rust's `fn`'s from TL definitions.
 
-use crate::grouper;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use std::io::{self, Write};
@@ -22,32 +21,25 @@ use tdgrand_tl_parser::tl::{Category, Definition};
 ///     pub field: Option<Type>,
 /// }
 /// ```
-fn write_struct<W: Write>(
-    file: &mut W,
-    indent: &str,
-    def: &Definition,
-    _metadata: &Metadata,
-) -> io::Result<()> {
+fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     // Define struct
-    writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
-    writeln!(file, "{}#[derive(Default, Serialize)]", indent)?;
+    writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
+    writeln!(file, "    #[derive(Default, Serialize)]")?;
     writeln!(
         file,
-        "{}pub struct {} {{",
-        indent,
+        "    pub struct {} {{",
         rustifier::definitions::type_name(def),
     )?;
 
     for param in def.params.iter() {
         writeln!(
             file,
-            "{}    {}: Option<{}>,",
-            indent,
+            "        {}: Option<{}>,",
             rustifier::parameters::attr_name(param),
             rustifier::parameters::qual_name(param),
         )?;
     }
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
@@ -57,104 +49,85 @@ fn write_struct<W: Write>(
 /// impl Type {
 /// }
 /// ```
-fn write_impl<W: Write>(
-    file: &mut W,
-    indent: &str,
-    def: &Definition,
-    _metadata: &Metadata,
-) -> io::Result<()> {
+fn write_impl<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     writeln!(
         file,
-        "{}impl {} {{",
-        indent,
+        "    impl {} {{",
         rustifier::definitions::type_name(def),
     )?;
 
     writeln!(
         file,
-        "{}    pub fn new() -> {} {{",
-        indent,
+        "        pub fn new() -> {} {{",
         rustifier::definitions::type_name(def)
     )?;
-    writeln!(file, "{}        Default::default()", indent)?;
-    writeln!(file, "{}    }}", indent)?;
+    writeln!(file, "            Default::default()")?;
+    writeln!(file, "        }}")?;
 
     for param in def.params.iter() {
         writeln!(
             file,
             "{}",
-            rustifier::parameters::description(param, &format!("{}    ", indent))
+            rustifier::parameters::description(param, "        ")
         )?;
         writeln!(
             file,
-            "{}    pub fn {1}(mut self, {1}: {2}) -> {3} {{",
-            indent,
+            "        pub fn {0}(mut self, {0}: {1}) -> {2} {{",
             rustifier::parameters::attr_name(param),
             rustifier::parameters::qual_name(param),
             rustifier::definitions::type_name(def),
         )?;
         writeln!(
             file,
-            "{}        self.{1} = Some({1});",
-            indent,
+            "            self.{0} = Some({0});",
             rustifier::parameters::attr_name(param)
         )?;
-        writeln!(file, "{}        self", indent)?;
-        writeln!(file, "{}    }}", indent)?;
+        writeln!(file, "            self")?;
+        writeln!(file, "        }}")?;
     }
 
     writeln!(
         file,
-        "{}    pub async fn send(self, client_id: i32) -> Result<{}, crate::types::Error> {{",
-        indent,
+        "        pub async fn send(self, client_id: i32) -> Result<{}, crate::types::Error> {{",
         rustifier::types::qual_name(&def.ty),
     )?;
     writeln!(
         file,
-        "{}        let mut request = serde_json::to_value(self).unwrap();",
-        indent
+        "            let mut request = serde_json::to_value(self).unwrap();",
     )?;
     writeln!(
         file,
-        "{}        request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();",
-        indent, def.name
+        "            request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();",
+        def.name
     )?;
     writeln!(
         file,
-        "{}        let response = send_request(client_id, request).await;",
-        indent
+        "            let response = send_request(client_id, request).await;",
     )?;
+    writeln!(file, "            if response[\"@type\"] == \"error\" {{",)?;
     writeln!(
         file,
-        "{}        if response[\"@type\"] == \"error\" {{",
-        indent
+        "                return Err(serde_json::from_value(response).unwrap())",
     )?;
+    writeln!(file, "            }}")?;
     writeln!(
         file,
-        "{}            return Err(serde_json::from_value(response).unwrap())",
-        indent
+        "            Ok(serde_json::from_value(response).unwrap())",
     )?;
-    writeln!(file, "{}        }}", indent)?;
-    writeln!(
-        file,
-        "{}        Ok(serde_json::from_value(response).unwrap())",
-        indent
-    )?;
-    writeln!(file, "{}    }}", indent)?;
+    writeln!(file, "        }}")?;
 
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
 /// Writes an entire definition as Rust code (`fn`).
 fn write_definition<W: Write>(
     file: &mut W,
-    indent: &str,
     def: &Definition,
     metadata: &Metadata,
 ) -> io::Result<()> {
-    write_struct(file, indent, def, metadata)?;
-    write_impl(file, indent, def, metadata)?;
+    write_struct(file, def, metadata)?;
+    write_impl(file, def, metadata)?;
     Ok(())
 }
 
@@ -169,26 +142,12 @@ pub(crate) fn write_functions_mod<W: Write>(
     writeln!(file, "    use serde::Serialize;")?;
     writeln!(file, "    use crate::send_request;")?;
 
-    let grouped = grouper::group_by_ns(definitions, Category::Functions);
-    let mut sorted_keys: Vec<&String> = grouped.keys().collect();
-    sorted_keys.sort();
-    for key in sorted_keys.into_iter() {
-        // Begin possibly inner mod
-        let indent = if key.is_empty() {
-            "    "
-        } else {
-            writeln!(file, "    pub mod {} {{", key)?;
-            "        "
-        };
+    let functions = definitions
+        .iter()
+        .filter(|d| d.category == Category::Functions);
 
-        for definition in grouped[key].iter() {
-            write_definition(&mut file, indent, definition, metadata)?;
-        }
-
-        // End possibly inner mod
-        if !key.is_empty() {
-            writeln!(file, "    }}")?;
-        }
+    for definition in functions {
+        write_definition(&mut file, definition, metadata)?;
     }
 
     // End outermost mod

@@ -19,10 +19,6 @@ use crate::utils::infer_id;
 /// [Type Language]: https://core.telegram.org/mtproto/TL
 #[derive(Debug, PartialEq)]
 pub struct Definition {
-    /// The namespace components of the definition. This list will be empty
-    /// if the name of the definition belongs to the global namespace.
-    pub namespace: Vec<String>,
-
     /// The name of this definition. Also known as "predicate" or "method".
     pub name: String,
 
@@ -47,9 +43,6 @@ pub struct Definition {
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for ns in self.namespace.iter() {
-            write!(f, "{}.", ns)?;
-        }
         write!(f, "{}#{:x}", self.name, self.id)?;
 
         // If any parameter references a generic, make sure to define it early
@@ -151,15 +144,9 @@ impl FromStr for Definition {
             let n = it.next().unwrap(); // split() always return at least one
             (n, it.next())
         };
-
-        // Parse `ns1.ns2.name`
-        let mut namespace: Vec<String> = name.split('.').map(|part| part.to_string()).collect();
-        if namespace.iter().any(|part| part.is_empty()) {
+        if name.is_empty() {
             return Err(ParseError::MissingName);
         }
-
-        // Safe to unwrap because split() will always yield at least one.
-        let name = namespace.pop().unwrap();
 
         // Parse `id`
         let id = match id {
@@ -207,29 +194,13 @@ impl FromStr for Definition {
             .collect::<Result<_, ParseError>>()?;
 
         Ok(Definition {
-            namespace,
-            name,
+            name: name.into(),
             id,
             description,
             params,
             ty,
             category: Category::Types,
         })
-    }
-}
-
-impl Definition {
-    /// Convenience function to format both the namespace and name back into a single string.
-    pub fn full_name(&self) -> String {
-        let mut result = String::with_capacity(
-            self.namespace.iter().map(|ns| ns.len() + 1).sum::<usize>() + self.name.len(),
-        );
-        for ns in self.namespace.iter() {
-            result.push_str(ns);
-            result.push('.');
-        }
-        result.push_str(&self.name);
-        result
     }
 }
 
@@ -364,11 +335,10 @@ mod tests {
     fn parse_complete() {
         let def = "
             //@description This is a test description
-            ns1.name#123 pname:Vector<X> = Type";
+            name#123 pname:Vector<X> = Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
-                namespace: vec!["ns1".into()],
                 name: "name".into(),
                 id: 0x123,
                 description: "This is a test description".into(),

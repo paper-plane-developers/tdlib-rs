@@ -9,7 +9,6 @@
 
 //! Code to generate Rust's `struct`'s from TL definitions.
 
-use crate::grouper;
 use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
@@ -23,23 +22,16 @@ use tdgrand_tl_parser::tl::{Category, Definition};
 ///     pub field: Type,
 /// }
 /// ```
-fn write_struct<W: Write>(
-    file: &mut W,
-    indent: &str,
-    def: &Definition,
-    _metadata: &Metadata,
-) -> io::Result<()> {
+fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     // Define struct
-    writeln!(file, "{}", rustifier::definitions::description(def, indent))?;
+    writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
     writeln!(
         file,
-        "{}#[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
-        indent
+        "    #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
     )?;
     writeln!(
         file,
-        "{}pub struct {} {{",
-        indent,
+        "    pub struct {} {{",
         rustifier::definitions::type_name(def),
     )?;
 
@@ -47,15 +39,14 @@ fn write_struct<W: Write>(
         writeln!(
             file,
             "{}",
-            rustifier::parameters::description(param, &format!("{}    ", indent))
+            rustifier::parameters::description(param, "        ")
         )?;
         if let Some(serde_with) = rustifier::parameters::serde_with(param) {
-            writeln!(file, "{}    #[serde(with = \"{}\")]", indent, serde_with)?;
+            writeln!(file, "        #[serde(with = \"{}\")]", serde_with)?;
         }
         write!(
             file,
-            "{}    pub {}: ",
-            indent,
+            "        pub {}: ",
             rustifier::parameters::attr_name(param),
         )?;
 
@@ -69,18 +60,17 @@ fn write_struct<W: Write>(
         }
         writeln!(file, ",")?;
     }
-    writeln!(file, "{}}}", indent)?;
+    writeln!(file, "    }}")?;
     Ok(())
 }
 
 /// Writes an entire definition as Rust code (`struct`).
 fn write_definition<W: Write>(
     file: &mut W,
-    indent: &str,
     def: &Definition,
     metadata: &Metadata,
 ) -> io::Result<()> {
-    write_struct(file, indent, def, metadata)?;
+    write_struct(file, def, metadata)?;
     Ok(())
 }
 
@@ -94,29 +84,12 @@ pub(crate) fn write_types_mod<W: Write>(
     writeln!(file, "pub mod types {{")?;
     writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
 
-    let grouped = grouper::group_by_ns(definitions, Category::Types);
-    let mut sorted_keys: Vec<&String> = grouped.keys().collect();
-    sorted_keys.sort();
-    for key in sorted_keys.into_iter() {
-        // Begin possibly inner mod
-        let indent = if key.is_empty() {
-            "    "
-        } else {
-            writeln!(file, "    pub mod {} {{", key)?;
-            "        "
-        };
+    let types = definitions
+        .iter()
+        .filter(|d| d.category == Category::Types && !ignore_type(&d.ty) && !d.params.is_empty());
 
-        for definition in grouped[key]
-            .iter()
-            .filter(|def| !def.params.is_empty() && !ignore_type(&def.ty))
-        {
-            write_definition(&mut file, indent, definition, metadata)?;
-        }
-
-        // End possibly inner mod
-        if !key.is_empty() {
-            writeln!(file, "    }}")?;
-        }
+    for definition in types {
+        write_definition(&mut file, definition, metadata)?;
     }
 
     // End outermost mod

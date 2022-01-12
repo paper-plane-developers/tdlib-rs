@@ -89,10 +89,6 @@ pub mod definitions {
     pub fn qual_name(def: &Definition) -> String {
         let mut result = String::new();
         result.push_str("crate::types::");
-        def.namespace.iter().for_each(|ns| {
-            result.push_str(ns);
-            result.push_str("::");
-        });
         result.push_str(&type_name(def));
         result
     }

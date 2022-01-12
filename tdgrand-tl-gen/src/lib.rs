@@ -11,7 +11,6 @@
 //! them, feeding them the right data.
 mod enums;
 mod functions;
-mod grouper;
 mod metadata;
 mod rustifier;
 mod types;
