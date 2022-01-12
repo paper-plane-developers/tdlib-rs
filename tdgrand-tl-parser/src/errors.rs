@@ -10,7 +10,6 @@
 //! Errors that can occur during the parsing of [Type Language] definitions.
 //!
 //! [Type Language]: https://core.telegram.org/mtproto/TL
-use std::num::ParseIntError;
 
 /// The error type for the parsing operation of [`Definition`]s.
 ///
@@ -19,9 +18,6 @@ use std::num::ParseIntError;
 pub enum ParseError {
     /// The definition is empty.
     Empty,
-
-    /// The identifier from this definition is invalid.
-    InvalidId(ParseIntError),
 
     /// One of the parameters from this definition was invalid.
     InvalidParam(ParamParseError),

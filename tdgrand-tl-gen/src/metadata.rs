@@ -12,7 +12,7 @@ use tdgrand_tl_parser::tl::{Category, Definition, Type};
 
 /// Additional metadata required by several parts of the generation.
 pub(crate) struct Metadata<'a> {
-    recursing_defs: HashSet<u32>,
+    recursing_defs: HashSet<&'a String>,
     defs_with_type: HashMap<&'a String, Vec<&'a Definition>>,
 }
 
@@ -28,7 +28,7 @@ impl<'a> Metadata<'a> {
             .filter(|d| d.category == Category::Types)
             .for_each(|d| {
                 if d.params.iter().any(|p| p.ty.name == d.ty.name) {
-                    metadata.recursing_defs.insert(d.id);
+                    metadata.recursing_defs.insert(&d.name);
                 }
 
                 metadata
@@ -44,7 +44,7 @@ impl<'a> Metadata<'a> {
     /// Returns `true` if any of the parameters of `Definition` are of the
     /// same type as the `Definition` itself (meaning it recurses).
     pub fn is_recursive_def(&self, def: &Definition) -> bool {
-        self.recursing_defs.contains(&def.id)
+        self.recursing_defs.contains(&def.name)
     }
 
     pub fn defs_with_type(&self, ty: &'a Type) -> &Vec<&Definition> {

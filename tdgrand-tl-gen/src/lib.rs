@@ -30,8 +30,8 @@ pub fn generate_rust_code(file: &mut impl Write, definitions: &[Definition]) -> 
     write!(
         file,
         "\
-         // Copyright 2021 - developers of the `tdgrand` project.\n\
          // Copyright 2020 - developers of the `grammers` project.\n\
+         // Copyright 2021 - developers of the `tdgrand` project.\n\
          //\n\
          // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or\n\
          // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license\n\

@@ -20,7 +20,6 @@
 pub mod errors;
 pub mod tl;
 mod tl_iterator;
-mod utils;
 
 use errors::ParseError;
 use tl::Definition;

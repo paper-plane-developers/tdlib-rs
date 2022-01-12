@@ -12,7 +12,6 @@ use std::str::FromStr;
 
 use crate::errors::{ParamParseError, ParseError};
 use crate::tl::{Category, Parameter, Type};
-use crate::utils::infer_id;
 
 /// A [Type Language] definition.
 ///
@@ -21,12 +20,6 @@ use crate::utils::infer_id;
 pub struct Definition {
     /// The name of this definition. Also known as "predicate" or "method".
     pub name: String,
-
-    /// The numeric identifier of this definition.
-    ///
-    /// If a definition has an identifier, it overrides this value.
-    /// Otherwise, the identifier is inferred from the definition.
-    pub id: u32,
 
     /// The description of this definition.
     pub description: String,
@@ -43,7 +36,7 @@ pub struct Definition {
 
 impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}#{:x}", self.name, self.id)?;
+        write!(f, "{}", self.name)?;
 
         // If any parameter references a generic, make sure to define it early
         let mut type_defs = vec![];
@@ -132,27 +125,14 @@ impl FromStr for Definition {
         // Parse `name middle`
         let (name, middle) = {
             if let Some(pos) = left.find(' ') {
-                (&left[..pos], left[pos..].trim())
+                (left[..pos].trim(), left[pos..].trim())
             } else {
                 (left.trim(), "")
             }
         };
-
-        // Parse `name#id`
-        let (name, id) = {
-            let mut it = name.split('#');
-            let n = it.next().unwrap(); // split() always return at least one
-            (n, it.next())
-        };
         if name.is_empty() {
             return Err(ParseError::MissingName);
         }
-
-        // Parse `id`
-        let id = match id {
-            Some(v) => u32::from_str_radix(v.trim(), 16).map_err(ParseError::InvalidId)?,
-            None => infer_id(definition),
-        };
 
         // Parse `description`
         let description = if let Some(description) = docs.remove("description") {
@@ -195,7 +175,6 @@ impl FromStr for Definition {
 
         Ok(Definition {
             name: name.into(),
-            id,
             description,
             params,
             ty,
@@ -211,25 +190,6 @@ mod tests {
     #[test]
     fn parse_empty_def() {
         assert_eq!(Definition::from_str(""), Err(ParseError::Empty));
-    }
-
-    #[test]
-    fn parse_bad_id() {
-        let bad = u32::from_str_radix("bar", 16).unwrap_err();
-        let bad_q = u32::from_str_radix("?", 16).unwrap_err();
-        let bad_empty = u32::from_str_radix("", 16).unwrap_err();
-        assert_eq!(
-            Definition::from_str("foo#bar = baz"),
-            Err(ParseError::InvalidId(bad))
-        );
-        assert_eq!(
-            Definition::from_str("foo#? = baz"),
-            Err(ParseError::InvalidId(bad_q))
-        );
-        assert_eq!(
-            Definition::from_str("foo# = baz"),
-            Err(ParseError::InvalidId(bad_empty))
-        );
     }
 
     #[test]
@@ -252,19 +212,9 @@ mod tests {
     }
 
     #[test]
-    fn parse_override_id() {
-        let def = "rpc_answer_dropped msg_id:long seq_no:int bytes:int = RpcDropAnswer";
-        assert_eq!(Definition::from_str(def).unwrap().id, 0xa43ad8b7);
-
-        let def = "rpc_answer_dropped#123456 msg_id:long seq_no:int bytes:int = RpcDropAnswer";
-        assert_eq!(Definition::from_str(def).unwrap().id, 0x123456);
-    }
-
-    #[test]
     fn parse_valid_definition() {
-        let def = Definition::from_str("a#1=d").unwrap();
+        let def = Definition::from_str("a=d").unwrap();
         assert_eq!(def.name, "a");
-        assert_eq!(def.id, 1);
         assert_eq!(def.params.len(), 0);
         assert_eq!(
             def.ty,
@@ -277,7 +227,6 @@ mod tests {
 
         let def = Definition::from_str("a=d<e>").unwrap();
         assert_eq!(def.name, "a");
-        assert_ne!(def.id, 0);
         assert_eq!(def.params.len(), 0);
         assert_eq!(
             def.ty,
@@ -290,7 +239,6 @@ mod tests {
 
         let def = Definition::from_str("a b:c = d").unwrap();
         assert_eq!(def.name, "a");
-        assert_ne!(def.id, 0);
         assert_eq!(def.params.len(), 1);
         assert_eq!(
             def.ty,
@@ -305,22 +253,22 @@ mod tests {
     #[test]
     fn parse_multiline_definition() {
         let def = "
-            first#1 lol:param
+            first lol:param
               = t;
             ";
 
-        assert_eq!(Definition::from_str(def).unwrap().id, 1);
+        assert_eq!(Definition::from_str(def).unwrap().name, "first");
 
         let def = "
-            second#2
+            second
               lol:String
             = t;
             ";
 
-        assert_eq!(Definition::from_str(def).unwrap().id, 2);
+        assert_eq!(Definition::from_str(def).unwrap().name, "second");
 
         let def = "
-            third#3
+            third
 
               lol:String
 
@@ -328,19 +276,18 @@ mod tests {
                      t;
             ";
 
-        assert_eq!(Definition::from_str(def).unwrap().id, 3);
+        assert_eq!(Definition::from_str(def).unwrap().name, "third");
     }
 
     #[test]
     fn parse_complete() {
         let def = "
             //@description This is a test description
-            name#123 pname:Vector<X> = Type";
+            name pname:Vector<X> = Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
                 name: "name".into(),
-                id: 0x123,
                 description: "This is a test description".into(),
                 params: vec![Parameter {
                     name: "pname".into(),
@@ -367,7 +314,7 @@ mod tests {
 
     #[test]
     fn test_to_string() {
-        let def = "ns1.name#123 pname:Vector<X> = ns3.Type";
+        let def = "name pname:Vector<X> = Type";
         assert_eq!(Definition::from_str(def).unwrap().to_string(), def);
     }
 }
