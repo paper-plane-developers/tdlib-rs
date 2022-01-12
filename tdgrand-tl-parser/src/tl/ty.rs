@@ -14,9 +14,6 @@ use crate::errors::ParamParseError;
 /// The type of a definition or a parameter.
 #[derive(Debug, PartialEq)]
 pub struct Type {
-    /// The namespace components of the type.
-    pub namespace: Vec<String>,
-
     /// The name of the type.
     pub name: String,
 
@@ -29,9 +26,6 @@ pub struct Type {
 
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for ns in self.namespace.iter() {
-            write!(f, "{}.", ns)?;
-        }
         write!(f, "{}", self.name)?;
         if let Some(generic_arg) = &self.generic_arg {
             write!(f, "<{}>", generic_arg)?;
@@ -76,21 +70,15 @@ impl FromStr for Type {
             (ty, None)
         };
 
-        // Parse `ns1.ns2.name`
-        let mut namespace: Vec<String> = ty.split('.').map(|part| part.to_string()).collect();
-        if namespace.iter().any(|part| part.is_empty()) {
+        if ty.is_empty() {
             return Err(ParamParseError::Empty);
         }
 
-        // Safe to unwrap because split() will always yield at least one.
-        let name = namespace.pop().unwrap();
-
         // Safe to unwrap because we just checked is not empty
-        let bare = name.chars().next().unwrap().is_ascii_lowercase();
+        let bare = ty.chars().next().unwrap().is_ascii_lowercase();
 
         Ok(Self {
-            namespace,
-            name,
+            name: ty.into(),
             bare,
             generic_arg,
         })
@@ -111,7 +99,6 @@ mod tests {
         assert_eq!(
             Type::from_str("foo"),
             Ok(Type {
-                namespace: vec![],
                 name: "foo".into(),
                 bare: true,
                 generic_arg: None,
@@ -120,26 +107,8 @@ mod tests {
     }
 
     #[test]
-    fn check_empty_namespaced() {
-        assert_eq!(Type::from_str("."), Err(ParamParseError::Empty));
-        assert_eq!(Type::from_str(".."), Err(ParamParseError::Empty));
-        assert_eq!(Type::from_str(".foo"), Err(ParamParseError::Empty));
-        assert_eq!(Type::from_str("foo."), Err(ParamParseError::Empty));
-        assert_eq!(Type::from_str("foo..foo"), Err(ParamParseError::Empty));
-        assert_eq!(Type::from_str(".foo."), Err(ParamParseError::Empty));
-    }
-
-    #[test]
-    fn check_namespaced() {
-        assert_eq!(
-            Type::from_str("foo.bar.baz"),
-            Ok(Type {
-                namespace: vec!["foo".into(), "bar".into()],
-                name: "baz".into(),
-                bare: true,
-                generic_arg: None,
-            })
-        );
+    fn check_empty() {
+        assert_eq!(Type::from_str(""), Err(ParamParseError::Empty));
     }
 
     #[test]
@@ -152,23 +121,11 @@ mod tests {
             Ok(Type { bare: false, .. }) => true,
             _ => false,
         });
-        assert!(match Type::from_str("Foo.bar") {
-            Ok(Type { bare: true, .. }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("Foo.Bar") {
-            Ok(Type { bare: false, .. }) => true,
-            _ => false,
-        });
-        assert!(match Type::from_str("foo.Bar") {
-            Ok(Type { bare: false, .. }) => true,
-            _ => false,
-        });
     }
 
     #[test]
     fn check_generic_arg() {
-        assert!(match Type::from_str("foo.bar") {
+        assert!(match Type::from_str("foo") {
             Ok(Type {
                 generic_arg: None, ..
             }) => true,
@@ -181,11 +138,11 @@ mod tests {
             }) => *x == "bar".parse().unwrap(),
             _ => false,
         });
-        assert!(match Type::from_str("foo<bar.Baz>") {
+        assert!(match Type::from_str("foo<bar>") {
             Ok(Type {
                 generic_arg: Some(x),
                 ..
-            }) => *x == "bar.Baz".parse().unwrap(),
+            }) => *x == "bar".parse().unwrap(),
             _ => false,
         });
         assert!(match Type::from_str("foo<bar<baz>>") {

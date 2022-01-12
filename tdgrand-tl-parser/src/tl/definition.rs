@@ -298,7 +298,6 @@ mod tests {
         assert_eq!(
             def.ty,
             Type {
-                namespace: vec![],
                 name: "d".into(),
                 bare: true,
                 generic_arg: None,
@@ -312,7 +311,6 @@ mod tests {
         assert_eq!(
             def.ty,
             Type {
-                namespace: vec![],
                 name: "d".into(),
                 bare: true,
                 generic_arg: Some(Box::new("e".parse().unwrap())),
@@ -326,7 +324,6 @@ mod tests {
         assert_eq!(
             def.ty,
             Type {
-                namespace: vec![],
                 name: "d".into(),
                 bare: true,
                 generic_arg: None,
@@ -367,7 +364,7 @@ mod tests {
     fn parse_complete() {
         let def = "
             //@description This is a test description
-            ns1.name#123 pname:ns2.Vector<X> = ns3.Type";
+            ns1.name#123 pname:Vector<X> = Type";
         assert_eq!(
             Definition::from_str(def),
             Ok(Definition {
@@ -378,11 +375,9 @@ mod tests {
                 params: vec![Parameter {
                     name: "pname".into(),
                     ty: Type {
-                        namespace: vec!["ns2".into()],
                         name: "Vector".into(),
                         bare: false,
                         generic_arg: Some(Box::new(Type {
-                            namespace: vec![],
                             name: "X".into(),
                             bare: false,
                             generic_arg: None,
@@ -391,7 +386,6 @@ mod tests {
                     description: String::new(),
                 },],
                 ty: Type {
-                    namespace: vec!["ns3".into()],
                     name: "Type".into(),
                     bare: false,
                     generic_arg: None,

@@ -171,10 +171,6 @@ pub mod types {
             } else {
                 result.push_str("crate::enums::");
             }
-            ty.namespace.iter().for_each(|ns| {
-                result.push_str(ns);
-                result.push_str("::");
-            });
             result.push_str(&type_name(ty));
             result
         };
@@ -262,13 +258,6 @@ mod tests {
     }
 
     #[test]
-    fn check_def_namespaced_qual_name() {
-        let def = "upload.fileCdnRedirect = upload.File".parse().unwrap();
-        let name = definitions::qual_name(&def);
-        assert_eq!(name, "crate::types::upload::FileCdnRedirect");
-    }
-
-    #[test]
     fn check_def_variant_name() {
         let def = "new_session_created = NewSession".parse().unwrap();
         let name = definitions::variant_name(&def);
@@ -306,24 +295,10 @@ mod tests {
     }
 
     #[test]
-    fn check_type_qual_namespaced_name() {
-        let ty = "storage.FileType".parse().unwrap();
-        let name = types::qual_name(&ty);
-        assert_eq!(name, "crate::enums::storage::FileType");
-    }
-
-    #[test]
     fn check_type_qual_bare_name() {
         let ty = "ipPort".parse().unwrap();
         let name = types::qual_name(&ty);
         assert_eq!(name, "crate::types::IpPort");
-    }
-
-    #[test]
-    fn check_type_qual_namespaced_bare_name() {
-        let ty = "storage.fileUnknown".parse().unwrap();
-        let name = types::qual_name(&ty);
-        assert_eq!(name, "crate::types::storage::FileUnknown");
     }
 
     #[test]

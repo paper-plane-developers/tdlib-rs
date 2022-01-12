@@ -117,7 +117,6 @@ mod tests {
             Ok(Parameter {
                 name: "foo".into(),
                 ty: Type {
-                    namespace: vec![],
                     name: "bar".into(),
                     bare: true,
                     generic_arg: Some(Box::new("baz".parse().unwrap())),
