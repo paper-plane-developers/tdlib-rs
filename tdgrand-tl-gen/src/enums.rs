@@ -22,7 +22,12 @@ use tdgrand_tl_parser::tl::{Category, Definition, Type};
 ///     Variant(crate::types::Name),
 /// }
 /// ```
-fn write_enum<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
+fn write_enum<W: Write>(
+    file: &mut W,
+    ty: &Type,
+    metadata: &Metadata,
+    gen_bots_only_api: bool,
+) -> io::Result<()> {
     writeln!(
         file,
         "    #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]",
@@ -30,6 +35,10 @@ fn write_enum<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Res
     writeln!(file, "    #[serde(tag = \"@type\")]")?;
     writeln!(file, "    pub enum {} {{", rustifier::types::type_name(ty))?;
     for d in metadata.defs_with_type(ty) {
+        if rustifier::definitions::is_for_bots_only(d) && !gen_bots_only_api {
+            continue;
+        }
+
         writeln!(
             file,
             "{}",
@@ -69,6 +78,7 @@ pub(crate) fn write_enums_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
     // Begin outermost mod
     writeln!(file, "pub mod enums {{")?;
@@ -82,7 +92,7 @@ pub(crate) fn write_enums_mod<W: Write>(
     enums.dedup();
 
     for ty in enums {
-        write_enum(&mut file, ty, metadata)?;
+        write_enum(&mut file, ty, metadata, gen_bots_only_api)?;
     }
 
     // End outermost mod

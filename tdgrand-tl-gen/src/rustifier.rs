@@ -149,6 +149,10 @@ pub mod definitions {
     pub fn description(def: &Definition, indent: &str) -> String {
         rusty_doc(indent, &def.description)
     }
+
+    pub fn is_for_bots_only(def: &Definition) -> bool {
+        def.description.contains("; for bots only")
+    }
 }
 
 pub mod types {
@@ -235,6 +239,10 @@ pub mod parameters {
 
     pub fn is_optional(param: &Parameter) -> bool {
         param.description.contains("; may be null") || param.description.contains("; pass null")
+    }
+
+    pub fn is_for_bots_only(param: &Parameter) -> bool {
+        param.description.contains("; for bots only")
     }
 
     pub fn description(param: &Parameter, indent: &str) -> String {

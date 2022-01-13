@@ -25,12 +25,20 @@ fn write_function<W: Write>(
     file: &mut W,
     def: &Definition,
     _metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
+    if rustifier::definitions::is_for_bots_only(def) && !gen_bots_only_api {
+        return Ok(());
+    }
+
+    // Documentation
     writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
-
     writeln!(file, "    /// # Arguments")?;
-
     for param in def.params.iter() {
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
         writeln!(
             file,
             "    /// * `{}` - {}",
@@ -50,33 +58,38 @@ fn write_function<W: Write>(
         "    pub async fn {}(",
         rustifier::definitions::function_name(def)
     )?;
-
     for param in def.params.iter() {
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
         write!(file, "{}: ", rustifier::parameters::attr_name(param))?;
 
         let is_optional = rustifier::parameters::is_optional(param);
         if is_optional {
             write!(file, "Option<")?;
         }
-
         write!(file, "{}", rustifier::parameters::qual_name(param))?;
-
         if is_optional {
             write!(file, ">")?;
         }
 
         write!(file, ", ")?;
     }
-
     writeln!(
         file,
         "client_id: i32) -> Result<{}, crate::types::Error> {{",
         rustifier::types::qual_name(&def.ty)
     )?;
 
+    // Compose request
     writeln!(file, "        let request = json!({{")?;
     writeln!(file, "            \"@type\": \"{}\",", def.name)?;
     for param in def.params.iter() {
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
         writeln!(
             file,
             "            \"{0}\": {0},",
@@ -85,6 +98,7 @@ fn write_function<W: Write>(
     }
     writeln!(file, "        }});")?;
 
+    // Send request
     writeln!(
         file,
         "        let response = send_request(client_id, request).await;"
@@ -109,8 +123,9 @@ fn write_definition<W: Write>(
     file: &mut W,
     def: &Definition,
     metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
-    write_function(file, def, metadata)?;
+    write_function(file, def, metadata, gen_bots_only_api)?;
     Ok(())
 }
 
@@ -119,6 +134,7 @@ pub(crate) fn write_functions_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
     // Begin outermost mod
     writeln!(file, "pub mod functions {{")?;
@@ -130,7 +146,7 @@ pub(crate) fn write_functions_mod<W: Write>(
         .filter(|d| d.category == Category::Functions);
 
     for definition in functions {
-        write_definition(&mut file, definition, metadata)?;
+        write_definition(&mut file, definition, metadata, gen_bots_only_api)?;
     }
 
     // End outermost mod
