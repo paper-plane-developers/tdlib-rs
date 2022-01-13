@@ -154,7 +154,7 @@ pub mod definitions {
 pub mod types {
     use super::*;
 
-    fn builtin_type(ty: &Type, _path: bool) -> Option<&'static str> {
+    pub(super) fn builtin_type(ty: &Type) -> Option<&'static str> {
         Some(match ty.name.as_ref() {
             "Bool" => "bool",
             "bytes" => "String",
@@ -173,7 +173,7 @@ pub mod types {
     // 1. use `::<...>` instead of `<...>` to specify type arguments
     // 2. missing angle brackets in associated item path
     fn get_path(ty: &Type, path: bool) -> String {
-        let mut result = if let Some(name) = builtin_type(ty, path) {
+        let mut result = if let Some(name) = builtin_type(ty) {
             name.to_string()
         } else {
             let mut result = String::new();
@@ -227,6 +227,10 @@ pub mod parameters {
                 result
             }
         }
+    }
+
+    pub fn is_builtin_type(param: &Parameter) -> bool {
+        types::builtin_type(&param.ty).is_some()
     }
 
     pub fn is_optional(param: &Parameter) -> bool {

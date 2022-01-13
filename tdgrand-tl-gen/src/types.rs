@@ -25,10 +25,17 @@ use tdgrand_tl_parser::tl::{Category, Definition};
 fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     // Define struct
     writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
-    writeln!(
-        file,
-        "    #[derive(Clone, Debug, Default, PartialEq, Deserialize, Serialize)]",
-    )?;
+
+    write!(file, "    #[derive(Clone, Debug, ",)?;
+    let derive_default = def
+        .params
+        .iter()
+        .all(|p| rustifier::parameters::is_builtin_type(p));
+    if derive_default {
+        write!(file, "Default, ",)?;
+    }
+    writeln!(file, "PartialEq, Deserialize, Serialize)]",)?;
+
     writeln!(
         file,
         "    pub struct {} {{",

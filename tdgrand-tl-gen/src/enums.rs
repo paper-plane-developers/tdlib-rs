@@ -64,42 +64,6 @@ fn write_enum<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Res
     Ok(())
 }
 
-/// Defines the `impl Default` corresponding to the definition:
-///
-/// ```ignore
-/// impl Default for Enum {
-/// }
-/// ```
-fn write_impl_default<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
-    writeln!(
-        file,
-        "    impl Default for {} {{",
-        rustifier::types::type_name(ty),
-    )?;
-
-    let def = metadata.defs_with_type(ty)[0];
-    write!(
-        file,
-        "        fn default() -> Self {{ {}::{}",
-        rustifier::types::type_name(ty),
-        rustifier::definitions::variant_name(def),
-    )?;
-    if !def.params.is_empty() {
-        write!(file, "(Default::default())")?;
-    }
-    writeln!(file, " }}")?;
-
-    writeln!(file, "    }}")?;
-    Ok(())
-}
-
-/// Writes an entire definition as Rust code (`enum` and `impl`).
-fn write_definition<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Result<()> {
-    write_enum(file, ty, metadata)?;
-    write_impl_default(file, ty, metadata)?;
-    Ok(())
-}
-
 /// Write the entire module dedicated to enums.
 pub(crate) fn write_enums_mod<W: Write>(
     mut file: &mut W,
@@ -118,7 +82,7 @@ pub(crate) fn write_enums_mod<W: Write>(
     enums.dedup();
 
     for ty in enums {
-        write_definition(&mut file, ty, metadata)?;
+        write_enum(&mut file, ty, metadata)?;
     }
 
     // End outermost mod
