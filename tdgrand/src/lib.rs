@@ -17,7 +17,7 @@ use once_cell::sync::Lazy;
 use serde_json::Value;
 use uuid::Uuid;
 
-pub(crate) static OBSERVER: Lazy<observer::Observer> = Lazy::new(|| observer::Observer::new());
+pub(crate) static OBSERVER: Lazy<observer::Observer> = Lazy::new(observer::Observer::new);
 
 /// Create a TdLib client returning its id. Note that to start receiving
 /// updates for a client you need to send at least a request with it first.

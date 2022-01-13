@@ -43,6 +43,8 @@ fn write_function<W: Write>(
         "    /// * `client_id` - The client id to send the request to"
     )?;
 
+    // Function
+    writeln!(file, "    #[allow(clippy::too_many_arguments)]")?;
     write!(
         file,
         "    pub async fn {}(",
