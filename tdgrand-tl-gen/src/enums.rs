@@ -32,6 +32,11 @@ fn write_enum<W: Write>(file: &mut W, ty: &Type, metadata: &Metadata) -> io::Res
     for d in metadata.defs_with_type(ty) {
         writeln!(
             file,
+            "{}",
+            rustifier::definitions::description(d, "        ")
+        )?;
+        writeln!(
+            file,
             "        #[serde(rename(serialize = \"{0}\", deserialize = \"{0}\"))]",
             d.name
         )?;
