@@ -5,10 +5,10 @@
 // <LICENSE-MIT or https://opensource.org/licenses/MIT>, at your
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
+use futures_channel::oneshot;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::RwLock;
-use tokio::sync::oneshot;
 
 pub(super) struct Observer {
     requests: RwLock<HashMap<u32, oneshot::Sender<Value>>>,
