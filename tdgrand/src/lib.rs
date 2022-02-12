@@ -15,9 +15,10 @@ pub use generated::{enums, functions, types};
 use enums::Update;
 use once_cell::sync::Lazy;
 use serde_json::Value;
-use uuid::Uuid;
+use std::sync::atomic::{AtomicU32, Ordering};
 
-pub(crate) static OBSERVER: Lazy<observer::Observer> = Lazy::new(observer::Observer::new);
+static EXTRA_COUNTER: AtomicU32 = AtomicU32::new(0);
+static OBSERVER: Lazy<observer::Observer> = Lazy::new(observer::Observer::new);
 
 /// Create a TdLib client returning its id. Note that to start receiving
 /// updates for a client you need to send at least a request with it first.
@@ -34,7 +35,7 @@ pub fn receive() -> Option<(Update, i32)> {
     if let Some(response_str) = response {
         let response: Value = serde_json::from_str(&response_str).unwrap();
 
-        match response["@extra"].as_str() {
+        match response.get("@extra") {
             Some(_) => {
                 OBSERVER.notify(response);
             }
@@ -60,8 +61,8 @@ pub fn receive() -> Option<(Update, i32)> {
 }
 
 pub(crate) async fn send_request(client_id: i32, mut request: Value) -> Value {
-    let extra = Uuid::new_v4().to_string();
-    request["@extra"] = serde_json::to_value(extra.clone()).unwrap();
+    let extra = EXTRA_COUNTER.fetch_add(1, Ordering::Relaxed);
+    request["@extra"] = serde_json::to_value(extra).unwrap();
 
     let receiver = OBSERVER.subscribe(extra);
     tdjson::send(client_id, request.to_string());
