@@ -26,7 +26,11 @@ fn ignore_type(ty: &Type) -> bool {
     SPECIAL_CASED_TYPES.iter().any(|&x| x == ty.name)
 }
 
-pub fn generate_rust_code(file: &mut impl Write, definitions: &[Definition]) -> io::Result<()> {
+pub fn generate_rust_code(
+    file: &mut impl Write,
+    definitions: &[Definition],
+    gen_bots_only_api: bool,
+) -> io::Result<()> {
     write!(
         file,
         "\
@@ -42,9 +46,9 @@ pub fn generate_rust_code(file: &mut impl Write, definitions: &[Definition]) -> 
     )?;
 
     let metadata = metadata::Metadata::new(definitions);
-    types::write_types_mod(file, definitions, &metadata)?;
-    enums::write_enums_mod(file, definitions, &metadata)?;
-    functions::write_functions_mod(file, definitions, &metadata)?;
+    types::write_types_mod(file, definitions, &metadata, gen_bots_only_api)?;
+    enums::write_enums_mod(file, definitions, &metadata, gen_bots_only_api)?;
+    functions::write_functions_mod(file, definitions, &metadata, gen_bots_only_api)?;
 
     Ok(())
 }

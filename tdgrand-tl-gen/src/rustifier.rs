@@ -86,6 +86,21 @@ pub mod definitions {
         rusty_type_name(&def.name)
     }
 
+    pub fn function_name(def: &Definition) -> String {
+        let mut result = String::with_capacity(def.name.len());
+
+        def.name.chars().for_each(|c| {
+            if c.is_ascii_uppercase() {
+                result.push('_');
+                result.push(c.to_ascii_lowercase());
+            } else {
+                result.push(c);
+            }
+        });
+
+        result
+    }
+
     pub fn qual_name(def: &Definition) -> String {
         let mut result = String::new();
         result.push_str("crate::types::");
@@ -134,12 +149,16 @@ pub mod definitions {
     pub fn description(def: &Definition, indent: &str) -> String {
         rusty_doc(indent, &def.description)
     }
+
+    pub fn is_for_bots_only(def: &Definition) -> bool {
+        def.description.contains("; for bots only")
+    }
 }
 
 pub mod types {
     use super::*;
 
-    fn builtin_type(ty: &Type, _path: bool) -> Option<&'static str> {
+    pub(super) fn builtin_type(ty: &Type) -> Option<&'static str> {
         Some(match ty.name.as_ref() {
             "Bool" => "bool",
             "bytes" => "String",
@@ -153,12 +172,8 @@ pub mod types {
         })
     }
 
-    // There are only minor differences between qualified
-    // name and item paths so this method is used for both:
-    // 1. use `::<...>` instead of `<...>` to specify type arguments
-    // 2. missing angle brackets in associated item path
-    fn get_path(ty: &Type, path: bool) -> String {
-        let mut result = if let Some(name) = builtin_type(ty, path) {
+    fn get_path(ty: &Type, optional_generic_arg: bool) -> String {
+        let mut result = if let Some(name) = builtin_type(ty) {
             name.to_string()
         } else {
             let mut result = String::new();
@@ -172,11 +187,16 @@ pub mod types {
         };
 
         if let Some(generic_ty) = &ty.generic_arg {
-            if path {
-                result.push_str("::");
-            }
             result.push('<');
-            result.push_str(&qual_name(generic_ty));
+            if optional_generic_arg {
+                result.push_str("Option<");
+            }
+
+            result.push_str(&qual_name(generic_ty, false));
+
+            if optional_generic_arg {
+                result.push('>');
+            }
             result.push('>');
         }
 
@@ -187,8 +207,8 @@ pub mod types {
         rusty_type_name(&ty.name)
     }
 
-    pub fn qual_name(ty: &Type) -> String {
-        get_path(ty, false)
+    pub fn qual_name(ty: &Type, optional_generic_arg: bool) -> String {
+        get_path(ty, optional_generic_arg)
     }
 }
 
@@ -196,7 +216,10 @@ pub mod parameters {
     use super::*;
 
     pub fn qual_name(param: &Parameter) -> String {
-        types::qual_name(&param.ty)
+        // HACK: We're just matching against specific cases because there's not a
+        // documented way for knowing optional generic arguments in the tl scheme
+        let optional_generic_arg = param.description.contains("; messages may be null");
+        types::qual_name(&param.ty, optional_generic_arg)
     }
 
     pub fn attr_name(param: &Parameter) -> String {
@@ -212,6 +235,18 @@ pub mod parameters {
                 result
             }
         }
+    }
+
+    pub fn is_builtin_type(param: &Parameter) -> bool {
+        types::builtin_type(&param.ty).is_some()
+    }
+
+    pub fn is_optional(param: &Parameter) -> bool {
+        param.description.contains("; may be null") || param.description.contains("; pass null")
+    }
+
+    pub fn is_for_bots_only(param: &Parameter) -> bool {
+        param.description.contains("; for bots only")
     }
 
     pub fn description(param: &Parameter, indent: &str) -> String {

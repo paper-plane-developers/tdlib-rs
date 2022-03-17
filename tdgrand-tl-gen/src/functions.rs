@@ -14,107 +14,106 @@ use crate::rustifier;
 use std::io::{self, Write};
 use tdgrand_tl_parser::tl::{Category, Definition};
 
-/// Defines the `struct` corresponding to the definition:
+/// Defines the `function` corresponding to the definition:
 ///
 /// ```ignore
-/// pub struct Name {
-///     pub field: Option<Type>,
+/// pub async fn name(client_id: i32, field: Type) -> Result {
+///
 /// }
 /// ```
-fn write_struct<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
-    // Define struct
+fn write_function<W: Write>(
+    file: &mut W,
+    def: &Definition,
+    _metadata: &Metadata,
+    gen_bots_only_api: bool,
+) -> io::Result<()> {
+    if rustifier::definitions::is_for_bots_only(def) && !gen_bots_only_api {
+        return Ok(());
+    }
+
+    // Documentation
     writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
-    writeln!(file, "    #[derive(Default, Serialize)]")?;
-    writeln!(
-        file,
-        "    pub struct {} {{",
-        rustifier::definitions::type_name(def),
-    )?;
-
+    writeln!(file, "    /// # Arguments")?;
     for param in def.params.iter() {
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
         writeln!(
             file,
-            "        {}: Option<{}>,",
+            "    /// * `{}` - {}",
             rustifier::parameters::attr_name(param),
-            rustifier::parameters::qual_name(param),
+            param.description.replace('\n', "\n    /// ")
         )?;
     }
-    writeln!(file, "    }}")?;
-    Ok(())
-}
-
-/// Defines the `impl` corresponding to the definition:
-///
-/// ```ignore
-/// impl Type {
-/// }
-/// ```
-fn write_impl<W: Write>(file: &mut W, def: &Definition, _metadata: &Metadata) -> io::Result<()> {
     writeln!(
         file,
-        "    impl {} {{",
-        rustifier::definitions::type_name(def),
+        "    /// * `client_id` - The client id to send the request to"
     )?;
 
-    writeln!(
+    // Function
+    writeln!(file, "    #[allow(clippy::too_many_arguments)]")?;
+    write!(
         file,
-        "        pub fn new() -> {} {{",
-        rustifier::definitions::type_name(def)
+        "    pub async fn {}(",
+        rustifier::definitions::function_name(def)
     )?;
-    writeln!(file, "            Default::default()")?;
-    writeln!(file, "        }}")?;
-
     for param in def.params.iter() {
-        writeln!(
-            file,
-            "{}",
-            rustifier::parameters::description(param, "        ")
-        )?;
-        writeln!(
-            file,
-            "        pub fn {0}(mut self, {0}: {1}) -> {2} {{",
-            rustifier::parameters::attr_name(param),
-            rustifier::parameters::qual_name(param),
-            rustifier::definitions::type_name(def),
-        )?;
-        writeln!(
-            file,
-            "            self.{0} = Some({0});",
-            rustifier::parameters::attr_name(param)
-        )?;
-        writeln!(file, "            self")?;
-        writeln!(file, "        }}")?;
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
+        write!(file, "{}: ", rustifier::parameters::attr_name(param))?;
+
+        let is_optional = rustifier::parameters::is_optional(param);
+        if is_optional {
+            write!(file, "Option<")?;
+        }
+        write!(file, "{}", rustifier::parameters::qual_name(param))?;
+        if is_optional {
+            write!(file, ">")?;
+        }
+
+        write!(file, ", ")?;
     }
 
     writeln!(
         file,
-        "        pub async fn send(self, client_id: i32) -> Result<{}, crate::types::Error> {{",
-        rustifier::types::qual_name(&def.ty),
+        "client_id: i32) -> Result<{}, crate::types::Error> {{",
+        rustifier::types::qual_name(&def.ty, false)
     )?;
+
+    // Compose request
+    writeln!(file, "        let request = json!({{")?;
+    writeln!(file, "            \"@type\": \"{}\",", def.name)?;
+    for param in def.params.iter() {
+        if rustifier::parameters::is_for_bots_only(param) && !gen_bots_only_api {
+            continue;
+        }
+
+        writeln!(
+            file,
+            "            \"{0}\": {0},",
+            rustifier::parameters::attr_name(param),
+        )?;
+    }
+    writeln!(file, "        }});")?;
+
+    // Send request
     writeln!(
         file,
-        "            let mut request = serde_json::to_value(self).unwrap();",
+        "        let response = send_request(client_id, request).await;"
     )?;
+    writeln!(file, "        if response[\"@type\"] == \"error\" {{")?;
     writeln!(
         file,
-        "            request[\"@type\"] = serde_json::to_value(\"{}\").unwrap();",
-        def.name
-    )?;
-    writeln!(
-        file,
-        "            let response = send_request(client_id, request).await;",
-    )?;
-    writeln!(file, "            if response[\"@type\"] == \"error\" {{",)?;
-    writeln!(
-        file,
-        "                return Err(serde_json::from_value(response).unwrap())",
-    )?;
-    writeln!(file, "            }}")?;
-    writeln!(
-        file,
-        "            Ok(serde_json::from_value(response).unwrap())",
+        "            return Err(serde_json::from_value(response).unwrap())"
     )?;
     writeln!(file, "        }}")?;
+    writeln!(
+        file,
+        "        Ok(serde_json::from_value(response).unwrap())"
+    )?;
 
     writeln!(file, "    }}")?;
     Ok(())
@@ -125,9 +124,9 @@ fn write_definition<W: Write>(
     file: &mut W,
     def: &Definition,
     metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
-    write_struct(file, def, metadata)?;
-    write_impl(file, def, metadata)?;
+    write_function(file, def, metadata, gen_bots_only_api)?;
     Ok(())
 }
 
@@ -136,10 +135,11 @@ pub(crate) fn write_functions_mod<W: Write>(
     mut file: &mut W,
     definitions: &[Definition],
     metadata: &Metadata,
+    gen_bots_only_api: bool,
 ) -> io::Result<()> {
     // Begin outermost mod
     writeln!(file, "pub mod functions {{")?;
-    writeln!(file, "    use serde::Serialize;")?;
+    writeln!(file, "    use serde_json::json;")?;
     writeln!(file, "    use crate::send_request;")?;
 
     let functions = definitions
@@ -147,7 +147,7 @@ pub(crate) fn write_functions_mod<W: Write>(
         .filter(|d| d.category == Category::Functions);
 
     for definition in functions {
-        write_definition(&mut file, definition, metadata)?;
+        write_definition(&mut file, definition, metadata, gen_bots_only_api)?;
     }
 
     // End outermost mod

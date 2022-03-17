@@ -40,7 +40,7 @@ fn main() -> std::io::Result<()> {
         Path::new(&env::var("OUT_DIR").unwrap()).join("generated.rs"),
     )?);
 
-    generate_rust_code(&mut file, &definitions)?;
+    generate_rust_code(&mut file, &definitions, cfg!(feature = "bots-only-api"))?;
 
     file.flush()?;
     Ok(())
