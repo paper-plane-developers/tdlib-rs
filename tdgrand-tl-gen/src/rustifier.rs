@@ -172,7 +172,7 @@ pub mod types {
         })
     }
 
-    fn get_path(ty: &Type) -> String {
+    fn get_path(ty: &Type, optional_generic_arg: bool) -> String {
         let mut result = if let Some(name) = builtin_type(ty) {
             name.to_string()
         } else {
@@ -188,7 +188,15 @@ pub mod types {
 
         if let Some(generic_ty) = &ty.generic_arg {
             result.push('<');
-            result.push_str(&qual_name(generic_ty));
+            if optional_generic_arg {
+                result.push_str("Option<");
+            }
+
+            result.push_str(&qual_name(generic_ty, false));
+
+            if optional_generic_arg {
+                result.push('>');
+            }
             result.push('>');
         }
 
@@ -199,8 +207,8 @@ pub mod types {
         rusty_type_name(&ty.name)
     }
 
-    pub fn qual_name(ty: &Type) -> String {
-        get_path(ty)
+    pub fn qual_name(ty: &Type, optional_generic_arg: bool) -> String {
+        get_path(ty, optional_generic_arg)
     }
 }
 
@@ -208,7 +216,10 @@ pub mod parameters {
     use super::*;
 
     pub fn qual_name(param: &Parameter) -> String {
-        types::qual_name(&param.ty)
+        // HACK: We're just matching against specific cases because there's not a
+        // documented way for knowing optional generic arguments in the tl scheme
+        let optional_generic_arg = param.description.contains("; messages may be null");
+        types::qual_name(&param.ty, optional_generic_arg)
     }
 
     pub fn attr_name(param: &Parameter) -> String {

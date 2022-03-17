@@ -76,10 +76,11 @@ fn write_function<W: Write>(
 
         write!(file, ", ")?;
     }
+
     writeln!(
         file,
         "client_id: i32) -> Result<{}, crate::types::Error> {{",
-        rustifier::types::qual_name(&def.ty)
+        rustifier::types::qual_name(&def.ty, false)
     )?;
 
     // Compose request
