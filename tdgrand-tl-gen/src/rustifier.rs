@@ -172,11 +172,7 @@ pub mod types {
         })
     }
 
-    // There are only minor differences between qualified
-    // name and item paths so this method is used for both:
-    // 1. use `::<...>` instead of `<...>` to specify type arguments
-    // 2. missing angle brackets in associated item path
-    fn get_path(ty: &Type, path: bool) -> String {
+    fn get_path(ty: &Type) -> String {
         let mut result = if let Some(name) = builtin_type(ty) {
             name.to_string()
         } else {
@@ -191,9 +187,6 @@ pub mod types {
         };
 
         if let Some(generic_ty) = &ty.generic_arg {
-            if path {
-                result.push_str("::");
-            }
             result.push('<');
             result.push_str(&qual_name(generic_ty));
             result.push('>');
@@ -207,7 +200,7 @@ pub mod types {
     }
 
     pub fn qual_name(ty: &Type) -> String {
-        get_path(ty, false)
+        get_path(ty)
     }
 }
 
