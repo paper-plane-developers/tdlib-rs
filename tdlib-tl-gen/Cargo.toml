@@ -1,8 +1,8 @@
 [package]
-name = "tdgrand-tl-gen"
+name = "tdlib-tl-gen"
 version = "0.1.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
 
 [dependencies]
-tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }
+tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }

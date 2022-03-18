@@ -1,6 +1,6 @@
 [workspace]
 members = [
-  "tdgrand",
-  "tdgrand-tl-gen",
-  "tdgrand-tl-parser",
+  "tdlib",
+  "tdlib-tl-gen",
+  "tdlib-tl-parser",
 ]

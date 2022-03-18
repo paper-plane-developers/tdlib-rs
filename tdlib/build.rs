@@ -1,4 +1,4 @@
-// Copyright 2021 - developers of the `tdgrand` project.
+// Copyright 2021 - developers of the `tdlib-rs` project.
 // Copyright 2020 - developers of the `grammers` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
@@ -10,9 +10,9 @@ use std::env;
 use std::fs::File;
 use std::io::{self, BufWriter, Read, Write};
 use std::path::Path;
-use tdgrand_tl_gen::generate_rust_code;
-use tdgrand_tl_parser::parse_tl_file;
-use tdgrand_tl_parser::tl::Definition;
+use tdlib_tl_gen::generate_rust_code;
+use tdlib_tl_parser::parse_tl_file;
+use tdlib_tl_parser::tl::Definition;
 
 /// Load the type language definitions from a certain file.
 /// Parse errors will be printed to `stderr`, and only the

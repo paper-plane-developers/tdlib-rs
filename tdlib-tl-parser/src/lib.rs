@@ -32,7 +32,7 @@ use tl_iterator::TlIterator;
 /// ```no_run
 /// use std::fs::File;
 /// use std::io::{self, Read};
-/// use tdgrand_tl_parser::parse_tl_file;
+/// use tdlib_tl_parser::parse_tl_file;
 ///
 /// fn main() -> std::io::Result<()> {
 ///     let mut file = File::open("api.tl")?;

@@ -1,5 +1,5 @@
 [package]
-name = "tdgrand"
+name = "tdlib"
 version = "0.1.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"
@@ -17,8 +17,8 @@ serde_json = "1.0"
 serde_with = "1.12"
 
 [build-dependencies]
-tdgrand-tl-gen = { path = "../tdgrand-tl-gen", version = "0.1" }
-tdgrand-tl-parser = { path = "../tdgrand-tl-parser", version = "0.1" }
+tdlib-tl-gen = { path = "../tdlib-tl-gen", version = "0.1" }
+tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
