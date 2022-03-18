@@ -1,5 +1,5 @@
 [package]
-name = "tdgrand-tl-parser"
+name = "tdlib-tl-parser"
 version = "0.1.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2018"

@@ -1,5 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
-// Copyright 2021 - developers of the `tdgrand` project.
+// Copyright 2021 - developers of the `tdlib-rs` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -18,7 +18,7 @@
 //! * `item_path` for use as a qualified item path (`Vec::<u8>`).
 //! * `attr_name` for use as an attribute name (`foo_bar: ()`).
 
-use tdgrand_tl_parser::tl::{Definition, Parameter, Type};
+use tdlib_tl_parser::tl::{Definition, Parameter, Type};
 
 /// Get the rusty type name for a certain definition, excluding namespace.
 ///

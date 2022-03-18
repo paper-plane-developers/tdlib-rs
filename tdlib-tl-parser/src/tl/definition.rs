@@ -1,5 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
-// Copyright 2022 - developers of the `tdgrand` project.
+// Copyright 2022 - developers of the `tdlib-rs` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -65,7 +65,7 @@ impl FromStr for Definition {
     /// # Examples
     ///
     /// ```
-    /// use tdgrand_tl_parser::tl::Definition;
+    /// use tdlib_tl_parser::tl::Definition;
     ///
     /// assert!("sendMessage chat_id:int message:string = Message".parse::<Definition>().is_ok());
     /// ```

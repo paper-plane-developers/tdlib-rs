@@ -1,5 +1,5 @@
 // Copyright 2020 - developers of the `grammers` project.
-// Copyright 2021 - developers of the `tdgrand` project.
+// Copyright 2021 - developers of the `tdlib-rs` project.
 //
 // Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
 // https://www.apache.org/licenses/LICENSE-2.0> or the MIT license
@@ -13,7 +13,7 @@ use crate::ignore_type;
 use crate::metadata::Metadata;
 use crate::rustifier;
 use std::io::{self, Write};
-use tdgrand_tl_parser::tl::{Category, Definition, Type};
+use tdlib_tl_parser::tl::{Category, Definition, Type};
 
 /// Writes an enumeration listing all types such as the following rust code:
 ///
