@@ -11,6 +11,9 @@ description = """
 Rust wrapper around the Telegram Database Library.
 """
 
+[package.metadata.system-deps]
+tdjson = "1.8.2"
+
 [features]
 default = ["bots-only-api"]
 bots-only-api = []
@@ -24,6 +27,7 @@ serde_json = "1.0"
 serde_with = "1.12"
 
 [build-dependencies]
+system-deps = "6"
 tdlib-tl-gen = { path = "../tdlib-tl-gen", version = "0.1" }
 tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }
 

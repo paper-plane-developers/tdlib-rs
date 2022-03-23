@@ -34,6 +34,8 @@ fn load_tl(file: &str) -> io::Result<Vec<Definition>> {
 }
 
 fn main() -> std::io::Result<()> {
+    system_deps::Config::new().probe().unwrap();
+
     let definitions = load_tl("tl/api.tl")?;
 
     let mut file = BufWriter::new(File::create(
