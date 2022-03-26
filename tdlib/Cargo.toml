@@ -11,11 +11,15 @@ description = """
 Rust wrapper around the Telegram Database Library.
 """
 
+[package.metadata.docs.rs]
+features = ["dox"]
+
 [package.metadata.system-deps]
 tdjson = "1.8.2"
 
 [features]
 default = ["bots-only-api"]
+dox = []
 bots-only-api = []
 
 [dependencies]
