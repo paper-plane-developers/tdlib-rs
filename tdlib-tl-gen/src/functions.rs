@@ -110,10 +110,15 @@ fn write_function<W: Write>(
         "            return Err(serde_json::from_value(response).unwrap())"
     )?;
     writeln!(file, "        }}")?;
-    writeln!(
-        file,
-        "        Ok(serde_json::from_value(response).unwrap())"
-    )?;
+
+    if rustifier::types::is_ok(&def.ty) {
+        writeln!(file, "        Ok(())")?;
+    } else {
+        writeln!(
+            file,
+            "        Ok(serde_json::from_value(response).unwrap())"
+        )?;
+    }
 
     writeln!(file, "    }}")?;
     Ok(())
