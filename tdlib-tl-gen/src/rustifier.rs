@@ -168,6 +168,7 @@ pub mod types {
             "int64" => "i64",
             "string" => "String",
             "vector" => "Vec",
+            "Ok" => "()",
             _ => return None,
         })
     }
@@ -209,6 +210,10 @@ pub mod types {
 
     pub fn qual_name(ty: &Type, optional_generic_arg: bool) -> String {
         get_path(ty, optional_generic_arg)
+    }
+
+    pub fn is_ok(ty: &Type) -> bool {
+        ty.name == "Ok"
     }
 }
 
