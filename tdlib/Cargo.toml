@@ -1,6 +1,6 @@
 [package]
 name = "tdlib"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -32,7 +32,7 @@ serde_with = "1.12"
 
 [build-dependencies]
 system-deps = "6"
-tdlib-tl-gen = { path = "../tdlib-tl-gen", version = "0.1" }
+tdlib-tl-gen = { path = "../tdlib-tl-gen", version = "0.2" }
 tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }
 
 [dev-dependencies]
