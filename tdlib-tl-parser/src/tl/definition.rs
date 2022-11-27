@@ -38,17 +38,6 @@ impl fmt::Display for Definition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name)?;
 
-        // If any parameter references a generic, make sure to define it early
-        let mut type_defs = vec![];
-        for param in self.params.iter() {
-            param.ty.find_generic_refs(&mut type_defs);
-        }
-        type_defs.sort_unstable();
-        type_defs.dedup();
-        for type_def in type_defs {
-            write!(f, " {{{}:Type}}", type_def)?;
-        }
-
         for param in self.params.iter() {
             write!(f, " {}", param)?;
         }

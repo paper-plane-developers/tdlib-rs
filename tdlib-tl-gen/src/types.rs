@@ -34,11 +34,20 @@ fn write_struct<W: Write>(
 
     writeln!(file, "{}", rustifier::definitions::description(def, "    "))?;
 
+    let serde_as = def
+        .params
+        .iter()
+        .any(|p| rustifier::parameters::serde_as(p).is_some());
+
+    if serde_as {
+        write!(file, "    #[serde_as]",)?;
+    }
+
     write!(file, "    #[derive(Clone, Debug, ",)?;
     let derive_default = def
         .params
         .iter()
-        .all(|p| rustifier::parameters::is_builtin_type(p));
+        .all(rustifier::parameters::is_builtin_type);
     if derive_default {
         write!(file, "Default, ",)?;
     }
@@ -61,8 +70,8 @@ fn write_struct<W: Write>(
             rustifier::parameters::description(param, "        ")
         )?;
 
-        if let Some(serde_with) = rustifier::parameters::serde_with(param) {
-            writeln!(file, "        #[serde(with = \"{}\")]", serde_with)?;
+        if let Some(serde_as) = rustifier::parameters::serde_as(param) {
+            writeln!(file, "        #[serde_as(as = \"{}\")]", serde_as)?;
         }
         write!(
             file,
@@ -107,6 +116,7 @@ pub(crate) fn write_types_mod<W: Write>(
     // Begin outermost mod
     writeln!(file, "pub mod types {{")?;
     writeln!(file, "    use serde::{{Deserialize, Serialize}};")?;
+    writeln!(file, "    use serde_with::{{serde_as, DisplayFromStr}};")?;
 
     let types = definitions
         .iter()

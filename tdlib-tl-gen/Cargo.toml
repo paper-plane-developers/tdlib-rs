@@ -1,6 +1,6 @@
 [package]
 name = "tdlib-tl-gen"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Marco Melorio <marco.melorio@protonmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -12,4 +12,4 @@ Rust code generator from TDLib's API definitions.
 """
 
 [dependencies]
-tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }
+tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.2" }

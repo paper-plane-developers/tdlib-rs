@@ -14,7 +14,7 @@
 /// The error type for the parsing operation of [`Definition`]s.
 ///
 /// [`Definition`]: tl/struct.Definition.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ParseError {
     /// The definition is empty.
     Empty,
@@ -38,7 +38,7 @@ pub enum ParseError {
 /// The error type for the parsing operation of [`Parameter`]s.
 ///
 /// [`Parameter`]: tl/struct.Parameter.html
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ParamParseError {
     /// The parameter was empty.
     Empty,

@@ -75,7 +75,7 @@ fn rusty_doc(indent: &str, doc: &str) -> String {
     format!(
         "{}/// {}",
         indent,
-        doc.replace("\n", &format!("\n{}/// ", indent))
+        doc.replace('\n', &format!("\n{}/// ", indent))
     )
 }
 
@@ -258,9 +258,9 @@ pub mod parameters {
         rusty_doc(indent, &param.description)
     }
 
-    pub fn serde_with(param: &Parameter) -> Option<&'static str> {
+    pub fn serde_as(param: &Parameter) -> Option<&'static str> {
         return Some(match param.ty.name.as_ref() {
-            "int64" => "serde_with::rust::display_fromstr",
+            "int64" => "DisplayFromStr",
             _ => return None,
         });
     }
