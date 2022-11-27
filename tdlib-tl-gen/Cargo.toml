@@ -12,4 +12,4 @@ Rust code generator from TDLib's API definitions.
 """
 
 [dependencies]
-tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.1" }
+tdlib-tl-parser = { path = "../tdlib-tl-parser", version = "0.2" }

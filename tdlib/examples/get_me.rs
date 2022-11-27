@@ -3,10 +3,8 @@ use std::sync::{
     Arc,
 };
 use tdlib::{
-    self,
     enums::{AuthorizationState, Update, User},
     functions,
-    types::TdlibParameters,
 };
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
@@ -34,30 +32,31 @@ async fn handle_authorization_state(
     while let Some(state) = auth_rx.recv().await {
         match state {
             AuthorizationState::WaitTdlibParameters => {
-                let parameters = TdlibParameters {
-                    database_directory: "get_me_db".to_string(),
-                    api_id: env!("API_ID").parse::<i32>().unwrap(),
-                    api_hash: env!("API_HASH").to_string(),
-                    system_language_code: "en".to_string(),
-                    device_model: "Desktop".to_string(),
-                    application_version: env!("CARGO_PKG_VERSION").to_string(),
-                    ..Default::default()
-                };
+                let response = functions::set_tdlib_parameters(
+                    false,
+                    "get_me_db".into(),
+                    String::new(),
+                    String::new(),
+                    false,
+                    false,
+                    false,
+                    false,
+                    env!("API_ID").parse().unwrap(),
+                    env!("API_HASH").into(),
+                    "en".into(),
+                    "Desktop".into(),
+                    String::new(),
+                    env!("CARGO_PKG_VERSION").into(),
+                    false,
+                    true,
+                    client_id,
+                )
+                .await;
 
-                let response = functions::set_tdlib_parameters(parameters, client_id).await;
                 if let Err(error) = response {
                     println!("{}", error.message);
                 }
             }
-            AuthorizationState::WaitEncryptionKey(_) => loop {
-                let input =
-                    ask_user("Enter your encryption key (you can leave this empty if you want):");
-                let response = functions::check_database_encryption_key(input, client_id).await;
-                match response {
-                    Ok(_) => break,
-                    Err(e) => println!("{}", e.message),
-                }
-            },
             AuthorizationState::WaitPhoneNumber => loop {
                 let input = ask_user("Enter your phone number (include the country calling code):");
                 let response =
@@ -123,9 +122,9 @@ async fn main() {
     // Handle the authorization state to authenticate the client
     let auth_rx = handle_authorization_state(client_id, auth_rx, run_flag.clone()).await;
 
-    // Run the get_me() method to get user informations
+    // Run the get_me() method to get user information
     let User::User(me) = functions::get_me(client_id).await.unwrap();
-    println!("Hi, I'm {}", me.username);
+    println!("Hi, I'm {}", me.first_name);
 
     // Tell the client to close
     functions::close(client_id).await.unwrap();
