@@ -75,7 +75,7 @@ fn rusty_doc(indent: &str, doc: &str) -> String {
     format!(
         "{}/// {}",
         indent,
-        doc.replace("\n", &format!("\n{}/// ", indent))
+        doc.replace('\n', &format!("\n{}/// ", indent))
     )
 }
 

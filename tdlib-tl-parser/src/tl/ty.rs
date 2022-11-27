@@ -34,16 +34,6 @@ impl fmt::Display for Type {
     }
 }
 
-impl Type {
-    /// Find all the nested generic references in this type, and appends them
-    /// to the input vector.Box
-    pub(crate) fn find_generic_refs<'a>(&'a self, output: &mut Vec<&'a str>) {
-        if let Some(generic_arg) = &self.generic_arg {
-            generic_arg.find_generic_refs(output);
-        }
-    }
-}
-
 impl FromStr for Type {
     type Err = ParamParseError;
 

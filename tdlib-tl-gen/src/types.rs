@@ -38,7 +38,7 @@ fn write_struct<W: Write>(
     let derive_default = def
         .params
         .iter()
-        .all(|p| rustifier::parameters::is_builtin_type(p));
+        .all(rustifier::parameters::is_builtin_type);
     if derive_default {
         write!(file, "Default, ",)?;
     }
