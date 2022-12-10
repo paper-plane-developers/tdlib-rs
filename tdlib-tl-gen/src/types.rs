@@ -40,7 +40,7 @@ fn write_struct<W: Write>(
         .any(|p| rustifier::parameters::serde_as(p).is_some());
 
     if serde_as {
-        write!(file, "    #[serde_as]",)?;
+        writeln!(file, "    #[serde_as]",)?;
     }
 
     write!(file, "    #[derive(Clone, Debug, ",)?;
