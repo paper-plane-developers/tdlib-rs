@@ -47,7 +47,11 @@ fn write_struct<W: Write>(
     if metadata.can_def_implement_default(def) {
         write!(file, "Default, ",)?;
     }
-    writeln!(file, "PartialEq, Deserialize, Serialize)]",)?;
+    write!(file, "PartialEq, ",)?;
+    if rustifier::definitions::should_implement_hash(def) {
+        write!(file, "Eq, Hash, ",)?;
+    }
+    writeln!(file, "Deserialize, Serialize)]",)?;
 
     writeln!(
         file,

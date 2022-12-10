@@ -153,6 +153,12 @@ pub mod definitions {
     pub fn is_for_bots_only(def: &Definition) -> bool {
         def.description.contains("; for bots only")
     }
+
+    // This is implemented on a per-needed basis because it's
+    // really hard to do otherwise
+    pub fn should_implement_hash(def: &Definition) -> bool {
+        def.name == "chatListFilter"
+    }
 }
 
 pub mod types {
@@ -214,6 +220,12 @@ pub mod types {
 
     pub fn is_ok(ty: &Type) -> bool {
         ty.name == "Ok"
+    }
+
+    // This is implemented on a per-needed basis because it's
+    // really hard to do otherwise
+    pub fn should_implement_hash(ty: &Type) -> bool {
+        ty.name == "ChatList"
     }
 }
 
