@@ -25,7 +25,7 @@ use tdlib_tl_parser::tl::{Category, Definition};
 fn write_struct<W: Write>(
     file: &mut W,
     def: &Definition,
-    _metadata: &Metadata,
+    metadata: &Metadata,
     gen_bots_only_api: bool,
 ) -> io::Result<()> {
     if rustifier::definitions::is_for_bots_only(def) && !gen_bots_only_api {
@@ -40,18 +40,18 @@ fn write_struct<W: Write>(
         .any(|p| rustifier::parameters::serde_as(p).is_some());
 
     if serde_as {
-        write!(file, "    #[serde_as]",)?;
+        writeln!(file, "    #[serde_as]",)?;
     }
 
     write!(file, "    #[derive(Clone, Debug, ",)?;
-    let derive_default = def
-        .params
-        .iter()
-        .all(rustifier::parameters::is_builtin_type);
-    if derive_default {
+    if metadata.can_def_implement_default(def) {
         write!(file, "Default, ",)?;
     }
-    writeln!(file, "PartialEq, Deserialize, Serialize)]",)?;
+    write!(file, "PartialEq, ",)?;
+    if rustifier::definitions::should_implement_hash(def) {
+        write!(file, "Eq, Hash, ",)?;
+    }
+    writeln!(file, "Deserialize, Serialize)]",)?;
 
     writeln!(
         file,
