@@ -179,8 +179,8 @@ pub mod types {
         })
     }
 
-    fn get_path(ty: &Type, optional_generic_arg: bool) -> String {
-        let mut result = if let Some(name) = builtin_type(ty) {
+    fn get_base_path(ty: &Type) -> String {
+        if let Some(name) = builtin_type(ty) {
             name.to_string()
         } else {
             let mut result = String::new();
@@ -191,7 +191,11 @@ pub mod types {
             }
             result.push_str(&type_name(ty));
             result
-        };
+        }
+    }
+
+    fn get_path(ty: &Type, optional_generic_arg: bool) -> String {
+        let mut result = get_base_path(ty);
 
         if let Some(generic_ty) = &ty.generic_arg {
             result.push('<');
@@ -226,6 +230,26 @@ pub mod types {
     // really hard to do otherwise
     pub fn should_implement_hash(ty: &Type) -> bool {
         ty.name == "ChatList"
+    }
+
+    pub(super) fn serde_as(ty: &Type) -> Option<String> {
+        if ty.name == "int64" {
+            return Some("DisplayFromStr".into());
+        }
+
+        if let Some(generic_arg) = &ty.generic_arg {
+            if let Some(serde_as) = serde_as(generic_arg) {
+                let mut result = get_base_path(ty);
+
+                result.push('<');
+                result.push_str(&serde_as);
+                result.push('>');
+
+                return Some(result);
+            }
+        }
+
+        None
     }
 }
 
@@ -270,11 +294,8 @@ pub mod parameters {
         rusty_doc(indent, &param.description)
     }
 
-    pub fn serde_as(param: &Parameter) -> Option<&'static str> {
-        return Some(match param.ty.name.as_ref() {
-            "int64" => "DisplayFromStr",
-            _ => return None,
-        });
+    pub fn serde_as(param: &Parameter) -> Option<String> {
+        types::serde_as(&param.ty)
     }
 }
 
