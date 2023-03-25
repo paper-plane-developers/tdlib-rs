@@ -255,7 +255,7 @@ pub mod parameters {
     }
 
     pub fn is_builtin_type(param: &Parameter) -> bool {
-        types::builtin_type(&param.ty).is_some()
+        types::builtin_type(&param.ty).is_some() || is_optional(param)
     }
 
     pub fn is_optional(param: &Parameter) -> bool {
