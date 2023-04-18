@@ -93,7 +93,8 @@ fn write_function<W: Write>(
 
         writeln!(
             file,
-            "            \"{0}\": {0},",
+            "            \"{0}\": {1},",
+            param.name,
             rustifier::parameters::attr_name(param),
         )?;
     }
