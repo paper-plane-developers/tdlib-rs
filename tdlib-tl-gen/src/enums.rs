@@ -28,12 +28,10 @@ fn write_enum<W: Write>(
     metadata: &Metadata,
     gen_bots_only_api: bool,
 ) -> io::Result<()> {
-    write!(file, "    #[derive(Clone, Debug, PartialEq, ",)?;
-    if rustifier::types::should_implement_hash(ty) {
-        write!(file, "Eq, Hash, ",)?;
-    }
-    writeln!(file, "Deserialize, Serialize)]",)?;
-
+    writeln!(
+        file,
+        "    #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]",
+    )?;
     writeln!(file, "    #[serde(tag = \"@type\")]")?;
     writeln!(file, "    pub enum {} {{", rustifier::types::type_name(ty))?;
     for d in metadata.defs_with_type(ty) {
