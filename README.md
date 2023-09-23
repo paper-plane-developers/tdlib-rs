@@ -4,7 +4,7 @@ A Rust wrapper around the Telegram Database library. It includes a generator to 
 
 It's mainly created for using it in the [Telegrand](https://github.com/melix99/telegrand) client, but it should work also for any other Rust project.
 
-Current supported TDLib version: [1.8.18](https://github.com/tdlib/td/commit/100ca72b9179366d91089fd929f6c210f697031a).
+Current supported TDLib version: [1.8.19](https://github.com/tdlib/td/commit/2589c3fd46925f5d57e4ec79233cd1bd0f5d0c09).
 
 ## Credits
 
